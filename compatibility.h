@@ -6,7 +6,7 @@ class singleLayerNN;
 // This section is created because lbfgs needs function pointers 
 // for functions that calculate things like losses (e.g. evaluate() ).
 // These function pointers cannot point to member functions because
-// there is a type mismatch. 
+// there is a type mismatch (liblbfgs is pure C based, whereas we want to use C++). 
 // Given that our program is single threaded, we can let the calling class
 // set the vars that the evaluate() fn needs, as static vars temporarily.
 // We can avoid this approach by wrapping functions and passing the wrapped 
