@@ -12,7 +12,7 @@ CONTENTS
 1. Introduction
 --------------------
 
-This is an implementation of single-hidden layer neural network (NN) models for multi-label learning.
+This is an implementation of single hidden layer neural network (NN) models for multi-label learning.
 
 Multilabel learning is an extension of standard binary classification where the goal is to predict a set of labels (we call an individual label a tag) for each input example. The recent probabilistic classifier chain (PCC) method learns a series of probabilistic models that capture tag correlations. Using a neural network with a hidden layer, instead of connections between output nodes, brings several advantages that include tractable test-time inference and removing the need to select a fixed tag ordering. Moreover, the hidden units capture nonlinear latent structure, which improves classification accuracy, and allows correlations between tags to be visualized explicitly. 
 
