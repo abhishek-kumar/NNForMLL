@@ -48,7 +48,7 @@ In order to run the file from the command line, enter:
 
 <dl>
 <dt>method:     </dt>
-<dd>Either 1,2 or 3 for BN-MLL, SLN-MLL and BR-NN respectively (as described in the [paper](http://is.gd/NNForMLL).</dd>
+<dd>Either 1,2 or 3 for BN-MLL, SLN-MLL and BR-NN respectively (as described in the paper, http://is.gd/NNForMLL).</dd>
 
 <dt>train file: </dt> 
 <dd>Enter the full path to the training file. The file should be a csv file with only numbers, such that each line represents a document, the first p columns indicate values for the p features, the next k columns indicate values (0 or 1) for the k labels.</th></tr>
