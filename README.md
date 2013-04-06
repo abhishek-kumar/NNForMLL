@@ -59,7 +59,7 @@ In order to run the file from the command line, enter:
 <dt>p:          </dt> 
 <dd>The dimensionality of the input space, or the number of features.</dd>
 
-<dt>d:          </dt> 
+<dt>h:          </dt> 
 <dd>The number of hidden layers to use in the neural network model.</dd>
 
 <dt>k:          </dt> 
