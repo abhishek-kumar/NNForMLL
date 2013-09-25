@@ -1,5 +1,6 @@
 #include "nn.h"
 #include "parameters.h"
+#include <algorithm>
 
 /*
 	Gaussian Distribution sampling
