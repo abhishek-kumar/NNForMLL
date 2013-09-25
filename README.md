@@ -14,10 +14,10 @@ CONTENTS
 
 This is an implementation of single hidden layer neural network (NN) models for multi-label learning.
 
-Multilabel learning is an extension of standard binary classification where the goal is to predict a set of labels for each input example. This library learns to predict labels for unseen documents using a neural network with a hidden layer. The hidden units capture nonlinear latent structure, which improves classification accuracy, and allows correlations between tags to be visualized explicitly. 
+Multi-label learning is an extension of standard binary classification where the goal is to predict a set of labels for each input example. This project implements three models (i.e. BN-MLL, SLN-MLL and BR-MLL) that learn to predict labels for unseen documents, using a neural network with a hidden layer. These hidden units capture nonlinear latent structure, which improves classification accuracy, and allows correlations between tags to be visualized explicitly. 
 
-Compared to previous neural network methods for multilabel learning, this implementatation includes several design decisions that lead to a notable decrease in training time and an increase in accuracy. Empirical results show that the new method outperforms existing MLL methods on benchmark datasets. 
-Further details of the NN models can be found in a draft manuscript [here](http://is.gd/NNForMLL).
+Compared to previous neural network methods for multi-label learning, this implementatation includes several design decisions that lead to a notable decrease in training time and an increase in accuracy. Empirical results show that the new method outperforms existing methods on benchmark datasets. 
+Further details of the models can be found in a draft manuscript [here](http://is.gd/NNForMLL).
 
 
 2. How to Install and Compile
