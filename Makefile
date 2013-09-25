@@ -1,6 +1,7 @@
 BINDIR=bin
 DEPDIR=.dep
 LIBLBFGS_PATH=/usr/local/lib/liblbfgs.la
+
 all:
 	-rm -rf $(BINDIR)
 	-mkdir $(BINDIR)
@@ -9,8 +10,10 @@ all:
 	-rm *.o
 
 linker: run.o
-	../liblbfgs-1.10/libtool --mode=link --tag=CC g++ -msse2 -DUSE_SSE -O3 -ffast-math  -Wall -msse2 -DUSE_SSE -O3 -ffast-math  -Wall -o bin/mll *.o $(LIBLBFGS_PATH) -lm
+	./lib/liblbfgs-1.10/libtool --mode=link --tag=CC g++ -msse2 -DUSE_SSE -O3 -ffast-math  -Wall -msse2 -DUSE_SSE -O3 -ffast-math  -Wall -o bin/mll *.o $(LIBLBFGS_PATH) -lm
 
-run.o:
+run.o: lib
 	g++ -DHAVE_CONFIG_H -I. -msse2 -DUSE_SSE -O3 -ffast-math  -Wall -msse2 -DUSE_SSE -O3 -ffast-math  -Wall -MT run.o -MD -MP -MF ".deps/sample.Tpo" -g -c src/run.c src/singleLayerNN.c src/nn.c src/parameters.c src/BRSingleLayerNN.c
 
+lib: 
+	$(error Please install liblbfgs using the install.sh script.)

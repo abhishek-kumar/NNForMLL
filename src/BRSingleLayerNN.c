@@ -37,7 +37,7 @@ void BRSingleLayerNN::train(int lowerLimit, int upperLimit, int stepSize, int cv
 
 error_t BRSingleLayerNN::test(data_t xtest, data_t ytest) {
 	int sz = xtest.size();
-	floatnumber y_hata[k], y_hat[k], curloss = 0.0, wrongtags = 0.0;
+	floatnumber y_hat[k], curloss = 0.0, wrongtags = 0.0;
 	error_t loss = error_t();
 	record_t xrecord, yrecord;
 
@@ -55,14 +55,13 @@ error_t BRSingleLayerNN::test(data_t xtest, data_t ytest) {
 		wrongtags = 0.0;
 
 		for(int j=0; j<k; ++j) {
-			floatnumber y_hata_tag[1], y_hat_tag[1];
+			floatnumber y_hata_tag, y_hat_tag;
 			singleLayerNN& tagModel = *(baseModels[j]);
 			parameters& weights = *(tagModel.getParameters());
 			floatnumber temp = 0.0, junk[d], junk2[d];
-			tagModel.forwardPropagate(xrecord, weights, y_hata_tag, y_hat_tag, junk, junk2);
-			tagModel.calculateLosses(y_hata_tag, y_hat_tag, ytest_pertag[j][i], weights, curloss, temp);	
-			y_hata[j] = y_hata_tag[0];
-			y_hat[j]  = y_hat_tag[0];
+			tagModel.forwardPropagate(xrecord, weights, &y_hata_tag, &y_hat_tag, junk, junk2);
+			tagModel.calculateLosses(&y_hata_tag, &y_hat_tag, ytest_pertag[j][i], weights, curloss, temp);	
+			y_hat[j]  = y_hat_tag;
 			loss.nll += curloss;
 			wrongtags += temp;
 		}
