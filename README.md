@@ -14,10 +14,10 @@ CONTENTS
 
 This is an implementation of single hidden layer neural network (NN) models for multi-label learning.
 
-Multilabel learning is an extension of standard binary classification where the goal is to predict a set of labels (we call an individual label a tag) for each input example. This library learns to predict labels for unseen documents using a neural network with a hidden layer. The hidden units capture nonlinear latent structure, which improves classification accuracy, and allows correlations between tags to be visualized explicitly. 
+Multilabel learning is an extension of standard binary classification where the goal is to predict a set of labels for each input example. This library learns to predict labels for unseen documents using a neural network with a hidden layer. The hidden units capture nonlinear latent structure, which improves classification accuracy, and allows correlations between tags to be visualized explicitly. 
 
 Compared to previous neural network methods for multilabel learning, this implementatation includes several design decisions that lead to a notable decrease in training time and an increase in accuracy. Empirical results show that the new method outperforms existing MLL methods on benchmark datasets. 
-Further details of the NN models can be found [here](http://is.gd/NNForMLL).
+Further details of the NN models can be found in a draft manuscript [here](http://is.gd/NNForMLL).
 
 
 2. How to Install and Compile
@@ -26,7 +26,7 @@ This implementation uses L-BFGS in concert with backpropagation for training the
 To install, checkout this repository and run make:
 
 
-     $ git clone git clone https://github.com/abhishek-kumar/NNForMLL
+     $ git clone https://github.com/abhishek-kumar/NNForMLL
      $ cd NNForMLL/
      $ make
 
@@ -39,6 +39,7 @@ Notes:
   * If the make command fails, you can try installing explicitly using the install.sh script.
   * The make file assumes that your system library paths are set to the default '/usr/local/lib'. If not, the libraries may be installed elsewhere. If this happens, the output of 'install.sh' should tell you where the libraries are installed. This path should then be added to the Makefile in place of '/usr/local/lib'.
   * The library liblbfgs has been obtained from here: [liblbfgs](http://www.chokkan.org/software/liblbfgs/).
+  * The commands in this file have been tested on a PC running Ubuntu. They should work correctly on a mac, on other linux platforms and on windows with Cygwin. Please let me know if something doesn't work right on your platform.
 
 
 3. How to Run
