@@ -41,9 +41,10 @@ for dataset in $datasets; do
   echo "  Processing dataset '$dataset' (p = $p, k = $k, h = $h)"
   echo -n -e "  To check ongoing progress, see mll.log\r"
   if [ -f "/usr/bin/time" ]; then
-    /usr/bin/time -f'    Time taken: %e seconds' \
+    /usr/bin/time \
       bin/mll 1 data/$dataset/$dataset-train.csv \
-      data/$dataset/$dataset-test.csv  $p $h $k $C
+      data/$dataset/$dataset-test.csv  $p $h $k $C 2>&1 \
+      | sed -e "s/ *\(.*\)real.*/    Time taken: \1 seconds./"
   else
     bin/mll 1 data/$dataset/$dataset-train.csv \
       data/$dataset/$dataset-test.csv  $p $h $k $C
