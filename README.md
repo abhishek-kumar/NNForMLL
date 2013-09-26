@@ -49,9 +49,13 @@ To compile the code, run `make` from the `NNForMLL` directory.
 
      $ make
 
-In order to run the file to train a model and predict labels for a test set, enter:
+To run the `BN-MLL` model on the provided benchmark datasets, simply run the `run.sh` script file.
 
-     $ ./mll <method> <train file> <test file> <p> <h> <k> [singleLayerC]
+     $ ./run.sh
+
+In order to run program on your own datasets, with your own parameters, run using the following format:
+
+     $ ./bin/mll <method> <train file> <test file> <p> <h> <k> [singleLayerC]
 
 <dl>
 <dt>method:     </dt>
@@ -73,7 +77,7 @@ In order to run the file to train a model and predict labels for a test set, ent
 <dd>The dimensionality of the output space, or the number of labels.</dd>
 
 <dt>singleLayerC:</dt>
-<dd>If method #2 is being used, then the regularization weight for the component of the model corresponding to method #1 can be specified separately.</dd>
+<dd>Regularization weight for the bottom edges (edges between input layer and hidden layer). This argument is optional. If not provided, the program will learn using cross validation (this will take ~15x longer to run)</dd>
 </dl>
 
 4. Documentation
