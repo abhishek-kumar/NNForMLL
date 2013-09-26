@@ -44,7 +44,9 @@ for dataset in $datasets; do
     /usr/bin/time \
       bin/mll 1 data/$dataset/$dataset-train.csv \
       data/$dataset/$dataset-test.csv  $p $h $k $C 2>&1 \
-      | sed -e "s/ *\(.*\)real.*/    Time taken: \1 seconds./"
+      | sed -e "s/ *\(.*\)real.*/    Time taken: \1 seconds./" \
+      | sed -e "s/\(.*\)user.*/    Time taken: \1 seconds./" \
+      | grep -v "pagefaults"
   else
     bin/mll 1 data/$dataset/$dataset-train.csv \
       data/$dataset/$dataset-test.csv  $p $h $k $C
