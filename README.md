@@ -14,16 +14,16 @@ CONTENTS
 
 This is an implementation of single hidden layer neural network (NN) models for multi-label learning.
 
-Multi-label learning is an extension of standard binary classification where the goal is to predict a set of labels for each input example. This project implements three models (i.e. BN-MLL, SLN-MLL and BR-MLL) that learn to predict labels for unseen documents, using a neural network with a hidden layer. These hidden units capture nonlinear latent structure, which improves classification accuracy, and allows correlations between tags to be visualized explicitly. 
+Multi-label learning is an extension of standard binary classification where the goal is to predict a set of labels for each input example. This project implements three models (i.e. BN-MLL, SLN-MLL and BR-MLL) that learn to predict labels for unseen documents, using a neural network with a hidden layer. These hidden units capture nonlinear latent structure, which improves classification accuracy, and allows correlations between tags to be visualized explicitly.
 
-Compared to previous neural network methods for multi-label learning, this implementatation includes several design decisions that lead to a notable decrease in training time and an increase in accuracy. Empirical results show that the new method outperforms existing methods on benchmark datasets. 
+Compared to previous neural network methods for multi-label learning, this implementatation includes several design decisions that lead to a notable decrease in training time and an increase in accuracy. Empirical results show that the new method outperforms existing methods on benchmark datasets.
 Further details of the models can be found in a draft manuscript [here](http://is.gd/NNForMLL).
 
 
 2. How to Install and Compile
 ---------------------
-This implementation uses L-BFGS in concert with backpropagation for training the model parameters. 
-To install, checkout this repository and run make:
+This implementation uses L-BFGS in concert with backpropagation for training the model parameters.
+To install, checkout this repository and run `make`:
 
 
      $ git clone https://github.com/abhishek-kumar/NNForMLL
@@ -36,15 +36,15 @@ Upon completion, the compiled binary will be available in
      ./bin/mll
 
 Notes:
-  * If the make command fails, you can try installing explicitly using the install.sh script.
-  * The make file assumes that your system library paths are set to the default '/usr/local/lib'. If not, the libraries may be installed elsewhere. If this happens, the output of 'install.sh' should tell you where the libraries are installed. This path should then be added to the Makefile in place of '/usr/local/lib'.
+  * If the make command fails, you can try installing explicitly using the `install.sh` script.
+  * The make file assumes that your system library paths are set to the default `'/usr/local/lib'`. If not, the libraries may be installed elsewhere. If this happens, the output of `install.sh` should tell you where the libraries are installed. This path should then be added to the Makefile in place of `'/usr/local/lib'`.
   * The library liblbfgs has been obtained from here: [liblbfgs](http://www.chokkan.org/software/liblbfgs/).
   * The commands in this file have been tested on a PC running Ubuntu. They should work correctly on a mac, on other linux platforms and on windows with Cygwin. Please let me know if something doesn't work right on your platform.
 
 
 3. How to Run
 -----------------------------------
-To compile the code, run 'make' from the 'NNForMLL' directory.
+To compile the code, run `make` from the `NNForMLL` directory.
 
      $ make
 
@@ -56,19 +56,19 @@ In order to run the file to train a model and predict labels for a test set, ent
 <dt>method:     </dt>
 <dd>Either 1,2 or 3 for BN-MLL, SLN-MLL and BR-NN respectively (as described in the paper, http://is.gd/NNForMLL).</dd>
 
-<dt>train file: </dt> 
+<dt>train file: </dt>
 <dd>Enter the full path to the training file. The file should be a csv file with only numbers, such that each line represents a document, the first p columns indicate values for the p features, the next k columns indicate values (0 or 1) for the k labels.</th></tr>
 
-<dt>test file:  </dt> 
+<dt>test file:  </dt>
 <dd>Enter the full path to the test file. The format should be similar to the training file format.</dd>
 
-<dt>p:          </dt> 
+<dt>p:          </dt>
 <dd>The dimensionality of the input space, or the number of features.</dd>
 
-<dt>h:          </dt> 
+<dt>h:          </dt>
 <dd>The number of hidden layers to use in the neural network model.</dd>
 
-<dt>k:          </dt> 
+<dt>k:          </dt>
 <dd>The dimensionality of the output space, or the number of labels.</dd>
 
 <dt>singleLayerC:</dt>
