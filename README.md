@@ -39,7 +39,7 @@ Notes:
   * If the make command fails, you can try installing explicitly using the `install.sh` script.
   * The make file assumes that your system library paths are set to the default `'/usr/local/lib'`. If not, the libraries may be installed elsewhere. If this happens, the output of `install.sh` should tell you where the libraries are installed. This path should then be added to the Makefile in place of `'/usr/local/lib'`.
   * The library liblbfgs has been obtained from here: [liblbfgs](http://www.chokkan.org/software/liblbfgs/).
-  * If you don't have `make` installed, then install it on Ubuntu using `sudo apt-get install make`. On a mac, open `XCode` (create a new empty project project), go to the XCode menu, click Preferences. Go to the downloads tab and then to components. Under `Command line tools`, click Install.
+  * If you don't have `make` installed, then install it on Ubuntu using `sudo apt-get install make`. On a mac, open `XCode` (create a new empty project), go to the XCode menu, click Preferences. Go to the downloads tab and then to components. Under `Command line tools`, click Install.
   * The commands in this file have been tested on a PC running Ubuntu. They should work correctly on a mac, on other linux platforms and on windows with Cygwin. Please let me know if something doesn't work right on your platform.
 
 
