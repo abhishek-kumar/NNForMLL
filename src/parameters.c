@@ -1,6 +1,7 @@
 #include "nn.h"
 #include "parameters.h"
 #include <algorithm>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 

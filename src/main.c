@@ -1,10 +1,10 @@
-#include "nn.h"
-#include "io.h"
 #include <time.h>
+#include "BN_MLL.h"
+#include "io.h"
+#include "nn.h"
 #include "parameters.h"
-#include "singleLayerNN.h"
-#include "fullyconnectedNN.h"
-#include "BRSingleLayerNN.h"
+// #include "fullyconnectedNN.h"
+#include "BR_MLL.h"
 
 const string get_current_datetime() {
   time_t now = time(0);
@@ -55,17 +55,17 @@ int main(int argc, char **argv)
   // Parse flags
   if(atoi(argv[1]) == 1) {
     start_log();
-    singleLayerNN* BNMLL;
+    BN_MLL* BNMLL;
 
     // Check if we need to learn regularization weights
     if (argc > 7) {
       singleLayerC = atof(argv[7]);
-      BNMLL = new singleLayerNN(fileio.xtr, fileio.ytr, p, d, k, singleLayerC);
+      BNMLL = new BN_MLL(fileio.xtr, fileio.ytr, dimensions(p, d, k), singleLayerC);
       log("Training model with regularization weight C = %f", singleLayerC);
       BNMLL->fit();
     } else {
       // We need to learn hyperparams
-      BNMLL = new singleLayerNN(fileio, p, d, k);
+      BNMLL = new BN_MLL(fileio, dimensions(p, d, k));
       log("Training model. Regularization weight will be learnt via "
           "cross validation. This might take some time since training "
           "will be done ~15 times on the training set.");
@@ -90,7 +90,7 @@ int main(int argc, char **argv)
          << endl;
     return 1;
   } else if(atoi(argv[1]) == 3) {
-    BRSingleLayerNN model(fileio, p, d, k);
+    BR_MLL model(fileio, dimensions(p, d, k));
     model.train(-12, 13, 2);
     loss = model.test(fileio.xte, fileio.yte);
   } else {

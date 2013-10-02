@@ -1,7 +1,9 @@
 #ifndef COMPATIBILITY_H
 #define COMPATIBILITY_H
 
-class singleLayerNN;
+#include "types.h"
+
+class BN_MLL;
 
 // This section is created because lbfgs needs function pointers
 // for functions that calculate things like losses (e.g. evaluate() ).
@@ -11,9 +13,9 @@ class singleLayerNN;
 // set the vars that the evaluate() fn needs, as static vars temporarily.
 // We can avoid this approach by wrapping functions and passing the wrapped
 // type, but this is simple and avoids debugging nightmares.
-namespace Compatibility{
+namespace Compatibility {
 
-  extern singleLayerNN * model;
+  extern BN_MLL * model;
 
   lbfgsfloatval_t evaluate(
       void *instance,
@@ -33,6 +35,6 @@ namespace Compatibility{
       int n,
       int k,
       int ls);
-}
+};
 
 #endif

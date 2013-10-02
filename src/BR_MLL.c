@@ -1,14 +1,12 @@
 #include "nn.h"
 #include "io.h"
 #include "parameters.h"
-#include "BRSingleLayerNN.h"
+#include "BR_MLL.h"
 
 
-BRSingleLayerNN::BRSingleLayerNN(
-    io & fileio, int numFeatures, int numHiddenUnits, int numTags) :
-  p(numFeatures), d(numHiddenUnits), k(numTags),
-  xtr(fileio.xtr), ytr(fileio.ytr), m(xtr.size()),
-  ytr_tag(k, data_t()), baseModels()  {
+BR_MLL::BR_MLL(io & fileio, dimensions dim) :
+   p(dim.p), d(dim.h), k(dim.k), xtr(fileio.xtr), ytr(fileio.ytr),
+   m(xtr.size()), ytr_tag(k, data_t()), baseModels() {
     // Create k separate label-vectors because we are going to train k models
 
     // For each example
@@ -24,12 +22,12 @@ BRSingleLayerNN::BRSingleLayerNN(
     // Initialize the k base models
     for(int i=0; i<k; ++i) {
       // A shallow copy and destruct is OK because wopt is not allocated until fit() is called.
-      baseModels.push_back(new singleLayerNN(xtr, ytr_tag[i], numFeatures, numHiddenUnits, 1, 0.0));
+      baseModels.push_back(new BN_MLL(xtr, ytr_tag[i], dimensions(dim.p, dim.h, 1), 0.0));
     }
 
 }
 
-void BRSingleLayerNN::train(int lowerLimit, int upperLimit, int stepSize, int cvFolds) {
+void BR_MLL::train(int lowerLimit, int upperLimit, int stepSize, int cvFolds) {
 
   // Train the k base models
   for(int i=0; i<k; ++i) {
@@ -37,7 +35,7 @@ void BRSingleLayerNN::train(int lowerLimit, int upperLimit, int stepSize, int cv
   }
 }
 
-error_t BRSingleLayerNN::test(data_t xtest, data_t ytest) {
+error_t BR_MLL::test(data_t xtest, data_t ytest) {
   int sz = xtest.size();
   floatnumber y_hat[k], curloss = 0.0, wrongtags = 0.0;
   error_t loss = error_t();
@@ -58,7 +56,7 @@ error_t BRSingleLayerNN::test(data_t xtest, data_t ytest) {
 
     for(int j=0; j<k; ++j) {
       floatnumber y_hata_tag, y_hat_tag;
-      singleLayerNN& tagModel = *(baseModels[j]);
+      BN_MLL& tagModel = *(baseModels[j]);
       parameters& weights = *(tagModel.getParameters());
       floatnumber temp = 0.0, junk[d], junk2[d];
       tagModel.forwardPropagate(xrecord, weights, &y_hata_tag, &y_hat_tag, junk, junk2);
@@ -105,17 +103,12 @@ error_t BRSingleLayerNN::test(data_t xtest, data_t ytest) {
     loss.avprec += oe/float(r);
   }
   loss.hl /= sz*k; loss.sl /= sz, loss.rl /= sz; loss.nrl /= sz; loss.oe /= sz; loss.avprec /= sz;
-
-  cout << "Debug print: ";
-  loss.print();
-  //cout << "Top Tags for interpretability: " << endl;
-  //printTagCorrelations(*wopt, 6);
   return loss;
 }
 
-BRSingleLayerNN::~BRSingleLayerNN() {
+BR_MLL::~BR_MLL() {
   // Destroy the base models
-  for(vector<singleLayerNN *>::iterator itr = baseModels.begin(); itr != baseModels.end(); ++itr) {
+  for(vector<BN_MLL *>::iterator itr = baseModels.begin(); itr != baseModels.end(); ++itr) {
     delete (*itr);
   }
 }

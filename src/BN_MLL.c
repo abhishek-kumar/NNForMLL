@@ -1,73 +1,59 @@
-#include "nn.h"
+#include <math.h>
+
+#include "BN_MLL.h"
 #include "io.h"
+#include "nn.h"
 #include "parameters.h"
-#include "singleLayerNN.h"
+
+using namespace std;
 
 // ctors
-singleLayerNN::singleLayerNN(io & fileio, int numFeatures, int numHiddenUnits, int numTags) :
-  p(numFeatures), d(numHiddenUnits), k(numTags),
+BN_MLL::BN_MLL(io & fileio, dimensions dim) :
+  p(dim.p), d(dim.h), k(dim.k),
   linearity(0.0), wopt(0), counter(0), xtr(fileio.xtr), ytr(fileio.ytr), m(xtr.size()) { }
 
-singleLayerNN::singleLayerNN(data_t& xtrain, data_t& ytrain, int numFeatures, int numHiddenUnits,
-  int numTags, floatnumber regularizationStrength) :
-      p(numFeatures), d(numHiddenUnits), k(numTags), C(regularizationStrength),
-      linearity(0.0), wopt(0), counter(0), xtr(xtrain), ytr(ytrain), m(xtr.size()) { }
+BN_MLL::BN_MLL(
+  data_t& xtrain, data_t& ytrain, dimensions dim,
+  floatnumber regularizationStrength) :
+   p(dim.p), d(dim.h), k(dim.k),
+   C(regularizationStrength), linearity(0.0), wopt(0),
+   counter(0), xtr(xtrain), ytr(ytrain), m(xtr.size()) { }
 
-void singleLayerNN::fit() {
+void BN_MLL::fit() {
 
   // Initialize parameters for LBFGS
   if(wopt) delete wopt;
   wopt = new parameters(p,d,k,true);
-  /*
-  cout << "SingleLayerNN: Initialized weights as:\n";
-  for(int i=0; i < wopt->N; ++i)
-    cout << "(" << i+i << ", " << ((*wopt)[i]) << "), ";
-  cout << endl;
-  */
-  /*
-  for(int i=0, f=wopt->getvector()+wopt->layer1N+wopt->layer2N;
-      i<wopt->layer3N;
-      ++i,++f)
-      *f = 0.0;
-  */
   floatnumber bestloss = 1e+5;
   lbfgs_parameter_t param; int ret=0; lbfgs_parameter_init(&param);
   param.linesearch = LBFGS_LINESEARCH_BACKTRACKING_WOLFE;
 
   // Run the LBFGS training process
   counter = 0; // count of iterations done so far
-
   Compatibility::model = this;
   ret = lbfgs(wopt->N, wopt->getvector(), &bestloss, Compatibility::evaluate, Compatibility::progress, &xtr, &param);
 
-  /*
-  cout << "SingleLayerNN: Learned weights as:\n";
-  for(int i=0; i < wopt->N; ++i)
-    cout << "(" << i+i << ", " << ((*wopt)[i]) << "), ";
-  cout << endl;
-  */
-  /* Report the result. */
+  // Report the optimization result.
   log("    L-BFGS optimization terminated with status code = %d", ret);
   log("    Loss (NLL) after gradient descent = %f", bestloss);
 }
 
-void singleLayerNN::train(int lowerLimit, int upperLimit, int stepSize, int cvFolds) {
+void BN_MLL::train(int lowerLimit, int upperLimit, int stepSize, int cvFolds) {
   // cross validate to find regularization strength
-  int indexes[m]; for(int i=0; i<m; ++i) indexes[i] = i; randomShuffle(indexes, m);
-
+  int indexes[m]; 
+  for(int i=0; i<m; ++i) indexes[i] = i;
+  randomShuffle(indexes, m);
   floatnumber bestC=0.0, lastNLL=1e10, lasttolastNLL=1e10;
   floatnumber bestNllMean=1e10;
 
   // For each value of C in grid
-  for(int cc = lowerLimit; cc < upperLimit; cc += stepSize)
-  {
+  for(int cc = lowerLimit; cc < upperLimit; cc += stepSize) {
     floatnumber C = pow(2,cc);
     record_t cvLossesNll, cvLossesHl, cvLossesSl, cvLossesRl, cvLossesNrl, cvLossesOe, cvLossesAvprec;
     log("Regularization Parameter Training: Evaluating with C = 2^%d = %f.", cc, C);
 
     // For each fold
-    for(int cv=0; cv<cvFolds; ++cv)
-    {
+    for(int cv=0; cv<cvFolds; ++cv) {
       int testsetstart = cv*float(m)/cvFolds;
       int testsetend = testsetstart+float(m)/cvFolds;
       data_t cvxtrain, cvytrain; cvxtrain.clear(); cvytrain.clear();
@@ -88,7 +74,7 @@ void singleLayerNN::train(int lowerLimit, int upperLimit, int stepSize, int cvFo
         cvytrain.push_back(ytr[indexes[i]]);
       }
 
-      singleLayerNN tempModel(cvxtrain, cvytrain, p, d, k, C);
+      BN_MLL tempModel(cvxtrain, cvytrain, dimensions(p, d, k), C);
       log("  Cross validation: training model on fold #%d", cv + 1);
       tempModel.fit();
       error_t loss = tempModel.test(cvxtest, cvytest);
@@ -134,7 +120,7 @@ void singleLayerNN::train(int lowerLimit, int upperLimit, int stepSize, int cvFo
   return;
 }
 
-inline void singleLayerNN::calculateJacobian(
+inline void BN_MLL::calculateJacobian(
     record_t const & x, record_t const & y,
     const floatnumber *y_hata, const floatnumber *y_hat,
     const floatnumber *ha, const floatnumber *h,
@@ -172,7 +158,7 @@ inline void singleLayerNN::calculateJacobian(
     jacobian.val(1,d,j) += dy[j];
 };
 
-void singleLayerNN::forwardPropagate(  record_t const & x,
+void BN_MLL::forwardPropagate(  record_t const & x,
                                 parameters const & w,
                     floatnumber *y_hata_,
                     floatnumber *y_hat_,
@@ -198,7 +184,7 @@ void singleLayerNN::forwardPropagate(  record_t const & x,
 }
 
 
-error_t singleLayerNN::test(data_t xtest, data_t ytest) {
+error_t BN_MLL::test(data_t xtest, data_t ytest) {
   int sz = xtest.size();
   floatnumber y_hata[k], y_hat[k], ha[d], h[d], curloss, hl;
   error_t loss = error_t();
@@ -250,18 +236,15 @@ error_t singleLayerNN::test(data_t xtest, data_t ytest) {
   return loss;
 }
 
-void singleLayerNN::calculateLosses(const floatnumber *y_hata,
-                             const floatnumber *y_hat,
-                  record_t const & y,
-                  parameters const & w,
-                  floatnumber & nll,
-                  floatnumber & hl) {
+void BN_MLL::calculateLosses(
+  const floatnumber *y_hata, const floatnumber *y_hat, record_t const & y,
+  parameters const & w, floatnumber & nll, floatnumber & hl) {
+
   // All losses without regularization
   nll = 0; hl = 0;
 
-  for(int i=0; i<k; ++i)
-  {
-    floatnumber yi = 2*y[i] - 1; // convert to {-1,+1}
+  for(int i=0; i<k; ++i) {
+    floatnumber yi = 2*y[i] - 1;  // convert to {-1,+1}
     floatnumber minusyi = (-1)*yi;
     nll += log(1.0+exp(minusyi*y_hata[i])) - linearity*yi*y_hata[i];
     if(  (y_hat[i]<0.5 && y[i]>=0.5) || (y_hat[i]>=0.5 && y[i]<0.5) )
@@ -298,8 +281,7 @@ lbfgsfloatval_t Compatibility::evaluate(
   parameters jacobian(p, d, k, false);
 
 
-  for(int i = 0; i < m; ++i)
-  {
+  for(int i = 0; i < m; ++i) {
     record_t x = xtr[i]; record_t y = ytr[i];
 
     floatnumber y_hata[k], y_hat[k], ha[d], h[d];
@@ -326,7 +308,7 @@ lbfgsfloatval_t Compatibility::evaluate(
 }
 
 // Anything on the heap is destroyed here
-singleLayerNN::~singleLayerNN() {
+BN_MLL::~BN_MLL() {
    if (wopt) {
      wopt->destroy();
      delete wopt;
@@ -355,4 +337,4 @@ int Compatibility::progress(void *instance,
     return 0;
 }
 
-singleLayerNN * Compatibility::model;
+BN_MLL * Compatibility::model;

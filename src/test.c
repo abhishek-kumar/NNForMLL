@@ -1,7 +1,7 @@
 #include "nn.h"
 #include "io.h"
 #include "parameters.h"
-#include "singleLayerNN.h"
+#include "BN_MLL.h"
 
 
 void testparameters()
@@ -88,7 +88,7 @@ void testlbfgs()
 			cout << *rit << " ";
 		cout << endl;
 	}
-	singleLayerNN model(fileio.xtr, fileio.ytr);
+	BN_MLL model(fileio.xtr, fileio.ytr);
 	model.fit(p,d,k,256);
 }
 

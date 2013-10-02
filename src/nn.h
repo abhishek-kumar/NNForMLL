@@ -4,31 +4,31 @@
 #include <stdio.h>
 #include <stdarg.h>
 #include <stdlib.h>
-#include <math.h>
-#include <fstream>
 #include <functional>
 #include <vector>
 #include <iostream>
 #include <string>
 #include <numeric>
-#include <sstream>
 #include <string>
 #include <time.h>
-#include "lbfgs.h"
+#include "types.h"
 
 using namespace std;
 
-// float datatype used in the project
-typedef lbfgsfloatval_t floatnumber;
-
-// A list of float values is a record
-typedef vector<floatnumber> record_t;
-
-// A dataset is a vector of records
-typedef vector<record_t> data_t;
-
 // log file.
 extern FILE * log_file;
+
+// struct for holding neural network dimensions
+typedef struct nn_dimensions {
+  int p;  // Number of input nodes (#Features).
+  int h;  // Number of hidden nodes.
+  int k;  // Number of output nodes.
+  nn_dimensions(int input_nodes, int hidden_nodes, int output_nodes) {
+    p = input_nodes;
+    h = hidden_nodes;
+    k = output_nodes;
+  }
+} dimensions;
 
 // struct for holding loss values
 typedef struct error_t_struct {
