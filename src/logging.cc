@@ -3,6 +3,7 @@
 #include <fstream>
 #include <math.h>
 #include <stdarg.h>
+#include <stdio.h>
 #include <string>
 
 using namespace std;
@@ -59,6 +60,7 @@ const string get_current_datetime() {
 
 void start_log() {
   log_file = fopen("mll.log", "a");
+  setvbuf(log_file, NULL, _IOLBF, 1024);
   Log("======================================================");
   Log("NNForMLL: A program for multi-label learning");
   Log("(c) Abhishek Kumar");
