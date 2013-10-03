@@ -6,6 +6,9 @@
 
 typedef error_t (*callback_fn)(io&, dimensions, floatnumber);
 
+// Random number generator
+int rand_int(int n);
+
 // Randomly reshuffle the dataset for cross validation
 void randomShuffle(int *array, int n);
 

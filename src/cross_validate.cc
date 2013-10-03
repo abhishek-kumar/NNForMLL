@@ -11,6 +11,7 @@
 #include "types.h"
 #include <math.h>
 #include <numeric>
+#include <stdlib.h>
 
 floatnumber FindBestC(
     cv_params cv,
@@ -112,6 +113,15 @@ floatnumber FindBestC(
   return bestC;
 }
 
+int rand_int(int n) {
+  int limit = RAND_MAX - RAND_MAX % n;
+  int rnd;
+
+  do {
+    rnd = rand();
+  } while (rnd >= limit);
+  return rnd % n;
+}
 
 void randomShuffle(int *array, int n) {
   int i, j, tmp;

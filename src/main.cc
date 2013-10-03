@@ -4,6 +4,8 @@
 #include "logging.h"
 #include "parameters.h"
 #include <iostream>
+#include <stdarg.h>
+#include <stdlib.h>
 // #include "fullyconnectedNN.h"
 
 

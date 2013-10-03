@@ -1,22 +1,14 @@
 #include "logging.h"
 
+#include <fstream>
 #include <math.h>
+#include <stdarg.h>
 #include <string>
 
 using namespace std;
 
 // log file.
 FILE* log_file;
-
-int rand_int(int n) {
-  int limit = RAND_MAX - RAND_MAX % n;
-  int rnd;
-
-  do {
-    rnd = rand();
-  } while (rnd >= limit);
-  return rnd % n;
-}
 
 void Log(const string message, ...) {
   va_list args;

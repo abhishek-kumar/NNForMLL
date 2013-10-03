@@ -7,9 +7,6 @@
 // log file.
 extern FILE * log_file;
 
-// Random number generator
-int rand_int(int n);
-
 // Logging functions
 void Log(const std::string message, ...);
 void Log(error_t& losses);
