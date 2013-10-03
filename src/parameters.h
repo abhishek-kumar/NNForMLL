@@ -1,3 +1,5 @@
+#include "types.h"
+
 #define PI 3.141592654
 
 /*
@@ -33,7 +35,6 @@ typedef struct sparameters{
 
   const floatnumber * getvector() const;
 
-
   // Should be called by the caller of init()
   // Except when initialized from previous set of values
   void destroy();
@@ -47,4 +48,4 @@ bool comparator ( const std::pair<floatnumber, int>& l, const std::pair<floatnum
  * p: parameter structure
  * n: Number of tags to print for each hidden node
  */
-void printTagCorrelations(parameters & p, int n);
+void LogTagCorrelations(parameters& p, int n);

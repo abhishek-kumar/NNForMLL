@@ -1,11 +1,11 @@
-#include "nn.h"
 #include "parameters.h"
+
+#include "logging.h"
+#include "types.h"
 #include <algorithm>
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-using namespace std;
 
 /*
   Gaussian Distribution sampling
@@ -73,12 +73,11 @@ sparameters::sparameters(int pp, int dd, int kk, bool initializevector)
 }
 
 // Initialize from a previous set of values
-sparameters::sparameters(int pp, int dd, int kk, const floatnumber *w)
-{
-  p = pp; d = dd; k = kk;
-  layer1N=(p+1)*(d); layer2N=(d+1)*k; layer3N=(p+1)*k;
+sparameters::sparameters(int pp, int dd, int kk, const floatnumber *w) :
+    parametervector(NULL), cparametervector(w),
+    p(pp), d(dd), k(kk),
+    layer1N((pp+1)*(dd)), layer2N((dd+1)*kk), layer3N((pp+1)*kk), N(0.0) {
   N = layer1N + layer2N + layer3N;
-  cparametervector = w;
 }
 
 floatnumber & sparameters::val(int layer, int inputidx, int outputidx)
@@ -142,42 +141,28 @@ bool comparator ( const std::pair<floatnumber, int>& l, const std::pair<floatnum
  * p: parameter structure
  * n: Number of tags to print for each hidden node
  */
-void printTagCorrelations(parameters & p, int n) {
+void LogTagCorrelations(parameters& p, int n) {
   // Output top n labels for each hidden unit
-  log("Correlations between labels, as seen by hidden units:");
+  Log("Correlations between labels, as seen by hidden units:");
   for(int h=0; h<(p.d+1); ++h) {
     std::pair<floatnumber,int> weights[p.k];
     for(int j=0; j<p.k; ++j) weights[j] = std::pair<floatnumber, int>((-1.0)*fabs(p.val(1,h,j)), j);
     std::sort(weights,weights+p.k,comparator);
-    log("\tTop Labels for hidden node number %d:", h);
+    Log("\tTop Labels for hidden node number %d:", h);
     for(int i=0;i<n;++i)
-      log("\t\tLabel #%d with weight: %f", \
+      Log("\t\tLabel #%d with weight: %f", \
           weights[i].second, p.val(1,h,weights[i].second));
   }
 
   // Output top n features for each hidden unit
-  log("Correlations between features, as seen by hidden units:");
+  Log("Correlations between features, as seen by hidden units:");
   for(int h=0; h<(p.d+1); ++h) {
     std::pair<floatnumber,int> weights[p.p];
     for(int j=0; j<p.p; ++j) weights[j] = std::pair<floatnumber, int>((-1.0)*fabs(p.val(0,j,h)), j);
     std::sort(weights,weights+p.p,comparator);
-    log("\tTop Features for hidden node number %d:", h);
+    Log("\tTop Features for hidden node number %d:", h);
     for(int i=0;i<n;++i)
-      log("\t\tFeature #%d with weight: %f", \
+      Log("\t\tFeature #%d with weight: %f", \
           weights[i].second, p.val(0, weights[i].second, h));
   }
-
-  /*
-  cout << "Printing Tag Weights" << endl;
-  for(int h=0; h<(p.d+1); ++h)
-  {
-    string comma = "";
-    for(int j=0; j<p.k; ++j)
-    {
-      cout << comma << p.val(1,h,j);
-      comma = ", ";
-    }
-    cout << ";" << endl;
-  }
-  */
 }

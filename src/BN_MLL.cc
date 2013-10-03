@@ -1,26 +1,27 @@
 #include <math.h>
 
 #include "BN_MLL.h"
+#include "cross_validate.h"
 #include "io.h"
-#include "nn.h"
+#include "logging.h"
 #include "parameters.h"
 
 using namespace std;
 
-// ctors
+// Constructors
 BN_MLL::BN_MLL(io & fileio, dimensions dim) :
-  p(dim.p), d(dim.h), k(dim.k),
-  linearity(0.0), wopt(0), counter(0), xtr(fileio.xtr), ytr(fileio.ytr), m(xtr.size()) { }
+    m(fileio.xtr.size()), p(dim.p), d(dim.h), k(dim.k),
+    xtr(fileio.xtr), ytr(fileio.ytr),
+    wopt(0), C(0.0), linearity(0.0), counter(0) { }
 
 BN_MLL::BN_MLL(
   data_t& xtrain, data_t& ytrain, dimensions dim,
-  floatnumber regularizationStrength) :
-   p(dim.p), d(dim.h), k(dim.k),
-   C(regularizationStrength), linearity(0.0), wopt(0),
-   counter(0), xtr(xtrain), ytr(ytrain), m(xtr.size()) { }
+  floatnumber C_) :
+    m(xtrain.size()), p(dim.p), d(dim.h), k(dim.k),
+    xtr(xtrain), ytr(ytrain),
+   wopt(0), C(C_), linearity(0.0), counter(0)  { }
 
-void BN_MLL::fit() {
-
+void BN_MLL::Train() {
   // Initialize parameters for LBFGS
   if(wopt) delete wopt;
   wopt = new parameters(p,d,k,true);
@@ -34,90 +35,79 @@ void BN_MLL::fit() {
   ret = lbfgs(wopt->N, wopt->getvector(), &bestloss, Compatibility::evaluate, Compatibility::progress, &xtr, &param);
 
   // Report the optimization result.
-  log("    L-BFGS optimization terminated with status code = %d", ret);
-  log("    Loss (NLL) after gradient descent = %f", bestloss);
+  Log("    L-BFGS optimization terminated with status code = %d", ret);
+  Log("    Loss (Regularized NLL) after gradient descent = %f", bestloss);
 }
 
-void BN_MLL::train(int lowerLimit, int upperLimit, int stepSize, int cvFolds) {
+// Given a small subset dataset, train on the training subset and test on
+// the test subset and return loss values.
+error_t TrainAndTest(io& dataset, dimensions dim, floatnumber C) {
+  // Train
+  BN_MLL bn_mll(dataset.xtr, dataset.ytr, dim, C);
+  bn_mll.Train();
+
+  // Test and return loss
+  return bn_mll.Test(dataset.xte, dataset.yte);
+}
+
+void BN_MLL::Train(cv_params cv) {
   // cross validate to find regularization strength
-  int indexes[m]; 
-  for(int i=0; i<m; ++i) indexes[i] = i;
-  randomShuffle(indexes, m);
-  floatnumber bestC=0.0, lastNLL=1e10, lasttolastNLL=1e10;
-  floatnumber bestNllMean=1e10;
+  this->C = FindBestC(cv, xtr, ytr, dimensions(p, d, k),
+      TrainAndTest, false);
 
-  // For each value of C in grid
-  for(int cc = lowerLimit; cc < upperLimit; cc += stepSize) {
-    floatnumber C = pow(2,cc);
-    record_t cvLossesNll, cvLossesHl, cvLossesSl, cvLossesRl, cvLossesNrl, cvLossesOe, cvLossesAvprec;
-    log("Regularization Parameter Training: Evaluating with C = 2^%d = %f.", cc, C);
+  // Train with the new C value.
+  Train();
+}
 
-    // For each fold
-    for(int cv=0; cv<cvFolds; ++cv) {
-      int testsetstart = cv*float(m)/cvFolds;
-      int testsetend = testsetstart+float(m)/cvFolds;
-      data_t cvxtrain, cvytrain; cvxtrain.clear(); cvytrain.clear();
-      data_t cvxtest, cvytest; cvxtest.clear(); cvytest.clear();
-      for(int i=0; i<testsetstart; ++i)
+error_t BN_MLL::Test(data_t xtest, data_t ytest) {
+  int sz = xtest.size();
+  floatnumber y_hata[k], y_hat[k], ha[d], h[d], curloss, hl;
+  error_t loss = error_t();
+  record_t xrecord, yrecord;
+
+  for(int i = 0; i < sz; ++i) {
+    xrecord = xtest[i]; yrecord = ytest[i];
+    forwardPropagate(xrecord, *wopt, y_hata, y_hat, ha, h);
+    calculateLosses(y_hata, y_hat, yrecord, *wopt, curloss, hl);
+    loss.nll += curloss; loss.hl += hl; if(hl>0) ++(loss.sl);
+
+    // Number of relevant tags (for normalized RL)
+    floatnumber r=0; for(int temp=0; temp<k; ++temp) r+=yrecord[temp];
+
+    // Ranking Loss
+    floatnumber rl=0.0, rl2 =0.0;
+    for(int pid=0; pid<k; ++pid)
+      for(int nid=0; nid<k; ++nid)
+        if(yrecord[pid] > 0.5 && yrecord[nid] < 0.5)
+        {
+          if(y_hat[pid]<y_hat[nid]) ++rl, ++rl2;
+          if(y_hat[pid]==y_hat[nid]) rl+=0.5, ++rl2;
+        }
+    loss.rl += rl;
+    loss.nrl += rl2 / float(r*(k-r));
+
+    // One Error
+    floatnumber ymax=0.0; int argmaxy = -1;
+    for(int ii=0; ii<k; ++ii)
+      if(y_hat[ii] > ymax)
       {
-        cvxtrain.push_back(xtr[indexes[i]]);
-        cvytrain.push_back(ytr[indexes[i]]);
+        ymax = y_hat[ii];
+        argmaxy = ii;
       }
-      for(int i=testsetstart; i<testsetend; ++i)
-      {
-        cvxtest.push_back(xtr[indexes[i]]);
-        cvytest.push_back(ytr[indexes[i]]);
-      }
-      for(int i=testsetend; i<m; ++i)
-      {
-        cvxtrain.push_back(xtr[indexes[i]]);
-        cvytrain.push_back(ytr[indexes[i]]);
-      }
+    if(yrecord[argmaxy] < 0.5) ++(loss.oe);
 
-      BN_MLL tempModel(cvxtrain, cvytrain, dimensions(p, d, k), C);
-      log("  Cross validation: training model on fold #%d", cv + 1);
-      tempModel.fit();
-      error_t loss = tempModel.test(cvxtest, cvytest);
-      cvLossesNll.push_back(loss.nll); cvLossesHl.push_back(loss.hl); cvLossesSl.push_back(loss.sl);
-      cvLossesRl.push_back(loss.rl); cvLossesNrl.push_back(loss.nrl); cvLossesOe.push_back(loss.oe); cvLossesAvprec.push_back(loss.avprec);
-    }
-
-    floatnumber nllMean, nllStdev, hlMean, hlStdev, slMean, slStdev, rlMean, rlStdev, nrlMean,
-        nrlStdev, oeMean, oeStdev, avprecMean, avprecStdev;
-    mean_and_stdev(cvLossesNll, &nllMean, &nllStdev);
-    mean_and_stdev(cvLossesHl, &hlMean, &hlStdev);
-    mean_and_stdev(cvLossesSl, &slMean, &slStdev);
-    mean_and_stdev(cvLossesRl, &rlMean, &rlStdev);
-    mean_and_stdev(cvLossesNrl, &nrlMean, &nrlStdev);
-    mean_and_stdev(cvLossesOe, &oeMean, &oeStdev);
-    mean_and_stdev(cvLossesAvprec, &avprecMean, &avprecStdev);
-
-    log("  Cross validation complete. Results:");
-    log("  NLL: %0.3f+-%0.3f, HL: %0.3f+-%0.3f, SL: %0.3f+-%0.3f, "
-        "RL: %0.3f+-%0.3f, NRL: %0.3f+-%0.3f, OE: %0.3f+-%0.3f, "
-        "AVPREC: %0.3f+-%0.3f, ", nllMean, nllStdev, \
-        hlMean, hlStdev, slMean, slStdev, rlMean, rlStdev, \
-        nrlMean, nrlStdev, oeMean, oeStdev, avprecMean, avprecStdev);
-
-    if(nllMean<bestNllMean)
+    // Average Precision
+    floatnumber oe=0.0;
+    for(int ii=0; ii<k; ++ii)
     {
-      bestC = C;
-      bestNllMean = nllMean;
+      floatnumber rank=0.0; for(int iii=0; iii<k; ++iii) if(y_hat[iii] >= y_hat[ii]) ++rank;
+      floatnumber count = 0.0; for(int iii=0; iii<k; ++iii) if(y_hat[iii] >= y_hat[ii]) count += yrecord[iii];
+      oe += (yrecord[ii])*(count / rank);
     }
-    if( (lasttolastNLL+0.01) < lastNLL && (lastNLL+0.01) < nllMean) {
-      // we're doing worse down this path. stop.
-      log("  Regularization Parameter Training: "
-          "Further parameter checking is futile, losses seem to increase. "
-          "Halting at bestC: %f (currently evaluated C: %f )\n", bestC, C);
-      break;
-    }
-    lasttolastNLL = lastNLL; lastNLL = nllMean;
+    loss.avprec += oe/float(r);
   }
-  log("Regularization parameter training "
-      "complete. Best C: %f; and Loss (NLL) = %f", bestC, bestNllMean);
-  this->C = bestC;
-  fit();
-  return;
+  loss.hl /= sz*k; loss.sl /= sz, loss.rl /= sz; loss.nrl /= sz; loss.oe /= sz; loss.avprec /= sz;
+  return loss;
 }
 
 inline void BN_MLL::calculateJacobian(
@@ -181,59 +171,6 @@ void BN_MLL::forwardPropagate(  record_t const & x,
       y_hata_[j] += h_[i]*w.val(1,i,j);
   for(int j=0; j<k; ++j)
     y_hat_[j] = 1.0/(1.0+exp((-1)*y_hata_[j]));
-}
-
-
-error_t BN_MLL::test(data_t xtest, data_t ytest) {
-  int sz = xtest.size();
-  floatnumber y_hata[k], y_hat[k], ha[d], h[d], curloss, hl;
-  error_t loss = error_t();
-  record_t xrecord, yrecord;
-
-  for(int i = 0; i < sz; ++i)
-  {
-    xrecord = xtest[i]; yrecord = ytest[i];
-    forwardPropagate(xrecord, *wopt, y_hata, y_hat, ha, h);
-    calculateLosses(y_hata, y_hat, yrecord, *wopt, curloss, hl);
-    loss.nll += curloss; loss.hl += hl; if(hl>0) ++(loss.sl);
-
-    // Number of relevant tags (for normalized RL)
-    floatnumber r=0; for(int temp=0; temp<k; ++temp) r+=yrecord[temp];
-
-    // Ranking Loss
-    floatnumber rl=0.0, rl2 =0.0;
-    for(int pid=0; pid<k; ++pid)
-      for(int nid=0; nid<k; ++nid)
-        if(yrecord[pid] > 0.5 && yrecord[nid] < 0.5)
-        {
-          if(y_hat[pid]<y_hat[nid]) ++rl, ++rl2;
-          if(y_hat[pid]==y_hat[nid]) rl+=0.5, ++rl2;
-        }
-    loss.rl += rl;
-    loss.nrl += rl2 / float(r*(k-r));
-
-    // One Error
-    floatnumber ymax=0.0; int argmaxy = -1;
-    for(int ii=0; ii<k; ++ii)
-      if(y_hat[ii] > ymax)
-      {
-        ymax = y_hat[ii];
-        argmaxy = ii;
-      }
-    if(yrecord[argmaxy] < 0.5) ++(loss.oe);
-
-    // Average Precision
-    floatnumber oe=0.0;
-    for(int ii=0; ii<k; ++ii)
-    {
-      floatnumber rank=0.0; for(int iii=0; iii<k; ++iii) if(y_hat[iii] >= y_hat[ii]) ++rank;
-      floatnumber count = 0.0; for(int iii=0; iii<k; ++iii) if(y_hat[iii] >= y_hat[ii]) count += yrecord[iii];
-      oe += (yrecord[ii])*(count / rank);
-    }
-    loss.avprec += oe/float(r);
-  }
-  loss.hl /= sz*k; loss.sl /= sz, loss.rl /= sz; loss.nrl /= sz; loss.oe /= sz; loss.avprec /= sz;
-  return loss;
 }
 
 void BN_MLL::calculateLosses(
@@ -331,8 +268,8 @@ int Compatibility::progress(void *instance,
   ++counter;
   if(counter % 1000 != 0)
     return 0;
-    log("    Iteration %d | "
-        "loss: %f; w-norm = %f, jacobian-norm = %f, step = %f\n", \
+    Log("    Iteration %d | "
+        "loss: %f; w-norm = %f, jacobian-norm = %f, step = %f", \
         counter, fx, xnorm, gnorm, step);
     return 0;
 }

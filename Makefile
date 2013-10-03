@@ -14,7 +14,7 @@ linker: main.o
 	./lib/liblbfgs-1.10/libtool --mode=link --tag=CC g++ -msse2 -DUSE_SSE -O3 -ffast-math  -Wall -msse2 -DUSE_SSE -O3 -ffast-math  -Wall -o bin/mll *.o $(LIBLBFGS_PATH) -lm
 
 main.o: lib
-	g++ -DHAVE_CONFIG_H -I. -msse2 -DUSE_SSE -O3 -ffast-math  -Wall -msse2 -DUSE_SSE -O3 -ffast-math  -Wall -MT main.o -MD -MP -MF ".deps/sample.Tpo" -g -c src/main.c src/BN_MLL.c src/nn.c src/io.c src/parameters.c src/BR_MLL.c
+	g++ -DHAVE_CONFIG_H -I. -msse2 -DUSE_SSE -O3 -ffast-math  -Wall -msse2 -DUSE_SSE -O3 -ffast-math  -Wall -MT main.o -MD -MP -MF ".deps/sample.Tpo" -g -c src/main.cc src/BN_MLL.cc src/logging.cc src/io.c src/parameters.cc src/BR_MLL.cc src/cross_validate.cc
 
 lib: 
 	@echo "lib/liblbfgs was not found in this directory. Going to attempt install."

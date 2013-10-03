@@ -2,6 +2,10 @@
 #define BR_MLL_H
 
 #include "BN_MLL.h"
+#include "types.h"
+#include <vector>
+
+using namespace std;
 
 // A neural network with no hidden layer and direct connections between
 // input and output layer. This model is a binary relevance model and is
@@ -19,11 +23,11 @@ class BR_MLL {
   // We search for all values of C between
   // 2^(lowerLimit) <= C < 2^(UpperLimit)
   // in steps of stepSize
-  void train(int lowerLimit = -12, int upperLimit = 13, int stepSize = 1, int cvFolds = 5);
+  void Train(cv_params cv);
 
   // Given a test instance (xtest), compare our prediction with ground truth (ytest) and
   // compute evaluation metric values
-  error_t test(data_t xtest, data_t ytest);
+  error_t Test(data_t xtest, data_t ytest);
 
   ~BR_MLL();
 

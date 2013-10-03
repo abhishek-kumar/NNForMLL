@@ -1,7 +1,8 @@
-#include "nn.h"
-#include "io.h"
-#include "parameters.h"
 #include "BR_MLL.h"
+#include "io.h"
+#include "logging.h"
+#include "parameters.h"
+#include "types.h"
 
 
 BR_MLL::BR_MLL(io & fileio, dimensions dim) :
@@ -27,21 +28,21 @@ BR_MLL::BR_MLL(io & fileio, dimensions dim) :
 
 }
 
-void BR_MLL::train(int lowerLimit, int upperLimit, int stepSize, int cvFolds) {
+void BR_MLL::Train(cv_params cv) {
 
   // Train the k base models
   for(int i=0; i<k; ++i) {
-    baseModels[i]->train(lowerLimit, upperLimit, stepSize, cvFolds);
+    baseModels[i]->Train(cv);
   }
 }
 
-error_t BR_MLL::test(data_t xtest, data_t ytest) {
+error_t BR_MLL::Test(data_t xtest, data_t ytest) {
   int sz = xtest.size();
   floatnumber y_hat[k], curloss = 0.0, wrongtags = 0.0;
   error_t loss = error_t();
   record_t xrecord, yrecord;
 
-  // label verctor for each base model
+  // label vector for each base model
   vector<data_t> ytest_pertag(k, data_t());
   for(int tag=0; tag < k; ++tag) {
     for(int docno=0; docno < sz; ++docno)

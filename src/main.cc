@@ -1,39 +1,13 @@
-#include <time.h>
 #include "BN_MLL.h"
-#include "io.h"
-#include "nn.h"
-#include "parameters.h"
-// #include "fullyconnectedNN.h"
 #include "BR_MLL.h"
+#include "io.h"
+#include "logging.h"
+#include "parameters.h"
+#include <iostream>
+// #include "fullyconnectedNN.h"
 
-const string get_current_datetime() {
-  time_t now = time(0);
-  struct tm  tstruct;
-  char current_time[80];
-  tstruct = *localtime(&now);
-  strftime(current_time, sizeof(current_time), "%Y-%m-%d  %X", &tstruct);
-  return current_time;
-}
 
-void start_log() {
-  log_file = fopen("mll.log", "a");
-  log("======================================================");
-  log("NNForMLL: A program for multi-label learning");
-  log("(c) Abhishek Kumar");
-  log("Details: https://github.com/abhishek-kumar/NNForMLL");
-  log("");
-  log("Program started at %s", get_current_datetime().c_str());
-  log("======================================================");
-  log("");
-}
-
-void finish_log() {
-  log("Program finished at %s", get_current_datetime().c_str());
-  fclose(log_file);
-}
-
-int main(int argc, char **argv)
-{
+int main(int argc, char **argv) {
   if(argc<7) {
     cerr << "Usage: "
          << "$ mll <1|2|3> <train file> <test file> <p> <h> <k> [singleLayerC]"
@@ -55,27 +29,27 @@ int main(int argc, char **argv)
   // Parse flags
   if(atoi(argv[1]) == 1) {
     start_log();
-    BN_MLL* BNMLL;
 
     // Check if we need to learn regularization weights
     if (argc > 7) {
       singleLayerC = atof(argv[7]);
-      BNMLL = new BN_MLL(fileio.xtr, fileio.ytr, dimensions(p, d, k), singleLayerC);
-      log("Training model with regularization weight C = %f", singleLayerC);
-      BNMLL->fit();
+      BN_MLL bn_mll(fileio.xtr, fileio.ytr, dimensions(p, d, k), singleLayerC);
+      Log("Training model with regularization weight C = %f", singleLayerC);
+      bn_mll.Train();
+      loss = bn_mll.Test(fileio.xte, fileio.yte);
+      // Print out some interesting tag-correlations - top 6 for each hidden unit
+      LogTagCorrelations(*(bn_mll.getParameters()), 6);
     } else {
       // We need to learn hyperparams
-      BNMLL = new BN_MLL(fileio, dimensions(p, d, k));
-      log("Training model. Regularization weight will be learnt via "
+      BN_MLL bn_mll(fileio, dimensions(p, d, k));
+      Log("Training model. Regularization weight will be learnt via "
           "cross validation. This might take some time since training "
           "will be done ~15 times on the training set.");
-      BNMLL->train(-12, 13, 2);
-      singleLayerC = BNMLL->getRegularizationStrength();
+      bn_mll.Train(cv_params(-12, 12, 1, 8));
+      loss = bn_mll.Test(fileio.xte, fileio.yte);
+      // Print out some interesting tag-correlations - top 6 for each hidden unit
+      LogTagCorrelations(*(bn_mll.getParameters()), 6);
     }
-    loss = BNMLL->test(fileio.xte, fileio.yte);
-
-    // Print out some interesting tag-correlations for first 6 hidden units
-    printTagCorrelations(*(BNMLL->getParameters()), 6);
   } else if(atoi(argv[1]) == 2) {
     if(argc < 8) {
       cerr << "You must provide 7 arguments, the last one being C"
@@ -91,8 +65,8 @@ int main(int argc, char **argv)
     return 1;
   } else if(atoi(argv[1]) == 3) {
     BR_MLL model(fileio, dimensions(p, d, k));
-    model.train(-12, 13, 2);
-    loss = model.test(fileio.xte, fileio.yte);
+    model.Train(cv_params(-12, 13, 2, 5));
+    loss = model.Test(fileio.xte, fileio.yte);
   } else {
     cerr << "Error, unknown first argument provided. "
          << "Must be either 1 (BN-MLL), 2 (SLN-MLL) or 3 (BR-BNMLL)."
@@ -101,9 +75,9 @@ int main(int argc, char **argv)
   }
 
   // Print results
-  log("Performance on Test Set '%s':", testfile);
-  loss.print();
-  log_stdout("  Finished training and testing. Performance on Test Set:");
-  loss.print_stdout();
+  Log("Performance on Test Set '%s':", testfile);
+  Log(loss);
+  Log_stdout("  Finished training and testing. Performance on Test Set:");
+  Log_stdout(loss);
   finish_log();
 }

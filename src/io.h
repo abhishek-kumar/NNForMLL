@@ -1,3 +1,6 @@
+#ifndef IO_H_
+#define IO_H_
+
 #include <string>
 #include "types.h"
 
@@ -24,3 +27,5 @@ class io {
   // Normalize the dataset to have 0-mean and 1-variance.
   void normalize(int p);
 };
+
+#endif
