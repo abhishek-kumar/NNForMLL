@@ -17,6 +17,7 @@ void Log(const string message, ...) {
   vfprintf(log_file, message.c_str(), args);
   fprintf(log_file, "\n");
   va_end(args);
+  fflush(log_file);
 }
 
 void Log_stdout(const string message, ...) {
