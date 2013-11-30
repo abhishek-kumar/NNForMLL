@@ -62,7 +62,7 @@ In order to run program on your own datasets, with your own parameters, run usin
 <dd>Either 1,2 or 3 for BN-MLL, SLN-MLL and BR-NN respectively (as described in the paper, http://is.gd/NNForMLL).</dd>
 
 <dt>train file: </dt>
-<dd>Enter the full path to the training file. The file should be a csv file with only numbers, such that each line represents a document, the first p columns indicate values for the p features, the next k columns indicate values (0 or 1) for the k labels.</th></tr>
+<dd>Enter the full path to the training file. The file should be a csv file with only numbers, such that each line represents a document, the first p columns indicate values for the p features, the next k columns indicate values (0 or 1) for the k labels. More details on the data format here: https://github.com/abhishek-kumar/NNForMLL/tree/master/data. </th></tr>
 
 <dt>test file:  </dt>
 <dd>Enter the full path to the test file. The format should be similar to the training file format.</dd>
