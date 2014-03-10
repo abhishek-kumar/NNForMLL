@@ -2,7 +2,6 @@
 #define BN_MLL_H
 
 #include "types.h"
-#include "compatibility.h"
 
 class io;
 struct nn_dimensions;
@@ -11,6 +10,33 @@ struct sparameters;
 typedef sparameters parameters;
 struct error_t_struct;
 typedef error_t_struct error_t;
+class BN_MLL;
+
+namespace LbfgsBNMLL {
+
+  BN_MLL * model;
+
+  // Calculate loss on the training dataset with given weights.
+  lbfgsfloatval_t evaluate(
+      void *instance,
+      const lbfgsfloatval_t *wv,
+      lbfgsfloatval_t *g,
+      const int n,
+      const lbfgsfloatval_t step);
+
+  // Print progress made so far.
+  int progress(
+      void *instance,
+      const lbfgsfloatval_t *x,
+      const lbfgsfloatval_t *g,
+      const lbfgsfloatval_t fx,
+      const lbfgsfloatval_t xnorm,
+      const lbfgsfloatval_t gnorm,
+      const lbfgsfloatval_t step,
+      int n,
+      int k,
+      int ls);
+};
 
 // A neural network with 1 hidden layer, and no direct connections between 
 // Input and Output layer (this model corresponds to the BN-MLL model in the paper) 
@@ -42,14 +68,14 @@ class BN_MLL {
 
   ~BN_MLL();
 
-  floatnumber  getRegularizationStrength() { return C; }
-  parameters*  getParameters()       { return wopt; }
+  floatnumber  GetRegularizationStrength() { return C; }
+  parameters*  GetParameters()             { return wopt; }
 
  protected:
   // Calculate the Jacobian (derivative) of the NN model. 
   // Useful for LBFGS training. 
   // Function parameters are the same as for fit().
-  void calculateJacobian(
+  void CalculateJacobian(
     record_t const & x, record_t const & y, const floatnumber *y_hata, 
     const floatnumber *y_hat, const floatnumber *ha,
     const floatnumber *h, parameters const & w, parameters & jacobian);
@@ -62,24 +88,24 @@ class BN_MLL {
   //   h = hidden layer
   // TODO(abhishek): Clean up the arguments and wrap activation vectors
   // into a struct to be passed around.
-  void forwardPropagate(
+  void ForwardPropagate(
     record_t const& x, parameters const& w, floatnumber* y_hata_, 
     floatnumber* y_hat_, floatnumber* ha_, floatnumber* h_);
 
   // After predictions have been obtained for a test example (y_hata, y_hat), compare with 
   // ground truth (y) and determine loss values (nll, hl = Negative log likelihood, Hamming loss).
   // This is used by the LBFGS calculations and so is separate from the test methods above.
-  void calculateLosses(const floatnumber* y_hata, const floatnumber* y_hat, 
+  void CalculateLosses(const floatnumber* y_hata, const floatnumber* y_hat, 
     record_t const & y, parameters const & w, floatnumber& nll, floatnumber& hl);
 
   // LBFGS called routines need full access to this class.
-  friend lbfgsfloatval_t Compatibility::evaluate(void *instance,
+  friend lbfgsfloatval_t LbfgsBNMLL::evaluate(void *instance,
                   const lbfgsfloatval_t *wv,
                   lbfgsfloatval_t *g,
                   const int n,
                   const lbfgsfloatval_t step);
 
-  friend int Compatibility::progress(void *instance,
+  friend int LbfgsBNMLL::progress(void *instance,
               const lbfgsfloatval_t *x, 
               const lbfgsfloatval_t *g, 
               const lbfgsfloatval_t fx, 

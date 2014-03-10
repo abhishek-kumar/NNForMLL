@@ -40,17 +40,17 @@ int main(int argc, char **argv) {
       bn_mll.Train();
       loss = bn_mll.Test(fileio.xte, fileio.yte);
       // Print out some interesting tag-correlations - top 6 for each hidden unit
-      LogTagCorrelations(*(bn_mll.getParameters()), 6);
+      LogTagCorrelations(*(bn_mll.GetParameters()), 6);
     } else {
       // We need to learn hyperparams
       BN_MLL bn_mll(fileio, dimensions(p, d, k));
       Log("Training model. Regularization weight will be learnt via "
           "cross validation. This might take some time since training "
           "will be done ~15 times on the training set.");
-      bn_mll.Train(cv_params(-12, 12, 1, 8));
+      bn_mll.Train(cv_params(-12, 12, 2, 5));
       loss = bn_mll.Test(fileio.xte, fileio.yte);
       // Print out some interesting tag-correlations - top 6 for each hidden unit
-      LogTagCorrelations(*(bn_mll.getParameters()), 6);
+      LogTagCorrelations(*(bn_mll.GetParameters()), 6);
     }
   } else if(atoi(argv[1]) == 2) {
     if(argc < 8) {
@@ -59,12 +59,13 @@ int main(int argc, char **argv) {
       return 1;
     }
     singleLayerC = atof(argv[7]);
-    //bestC = trainFullyConnectedNN(fileio, p, d, k, trainfile, singleLayerC);
-    cerr << "SLN-MLL is temporarily unsupported while I refactor the code "
-         << "Please use BN-MLL (first argument = 1) "
-         << "or BR-MLL (first argument = 3) instead"
-         << endl;
-    return 1;
+    SLN_MLL sln_mll(fileio, dimensions(p, d, k));
+    Log("Training model. Regularization weight C has been provided, "
+        "but C2 will be learnt via cross validation. This might take some time"
+        "since training will be done ~15 times on the training set.");
+    sln_mll.Train(cv_params(-12, 12, 2, 5));
+    loss = sln_mll.Test(fileio.xte, fileio.yte);
+    LogTagCorrelations(*(sln_mll.GetParameters()), 6);
   } else if(atoi(argv[1]) == 3) {
     BR_MLL model(fileio, dimensions(p, d, k));
     model.Train(cv_params(-12, 13, 2, 5));

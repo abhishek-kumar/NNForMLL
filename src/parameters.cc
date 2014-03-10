@@ -12,7 +12,7 @@
   Courtesy http://c-faq.com/lib/gaussian.html
   I've chosen an implementation that is not the fastest, but is more accurate
 */
-double gaussrand()
+double GaussRand()
 {
   static double V1, V2, S;
   static int phase = 0;
@@ -40,36 +40,40 @@ double gaussrand()
 // p,d,k are self explanatory
 // initializevector = 1 means vector will be initialized randomly
 //                      with appropriate gaussian
-// initializevector = 0 meanse vector will set to all zero
-sparameters::sparameters(int pp, int dd, int kk, bool initializevector)
-{
-  p = pp; d=dd; k = kk; layer1N=(p+1)*(d); layer2N=(d+1)*k; layer3N=(p+1)*k;
+// initializevector = 0 means vector will set to all zero
+sparameters::sparameters(
+    int p_, int d_, int k_,
+    bool initialize_layer1, bool initialize_layer2, bool initialize_layer3) {
+  p = p_; d=d_; k = k_;
+  layer1N=(p+1)*(d); layer2N=(d+1)*k; layer3N=(p+1)*k;
   N = layer1N + layer2N + layer3N;
   parametervector = lbfgs_malloc(N);
+  cparametervector = parametervector; // const pointer to same data
   floatnumber sigma = 1.0; int i; floatnumber *f;
 
-  if(initializevector)
-  {
-    // Initialize values as per [1]
+  // Initialize all weights to 0
+  for (i=0, f=parametervector; i<N; ++i,++f)
+    *f = 0.0;
+
+  // Initialize the weights from a Gaussian distribution with
+  // mean = 0 and std deviation = 1 / sqrt(number of units)
+  if (initialize_layer1) {
     sigma = 1/sqrt(p+1);
     for(i=0, f=parametervector; i<layer1N; ++i,++f)
-      *f = sigma*gaussrand();
+      *f = sigma*GaussRand();
+  }
 
+  if (initialize_layer2) {
     sigma = 1/sqrt(d+1);
     for(i=0, f=parametervector+layer1N; i<layer2N; ++i,++f)
-      *f = sigma*gaussrand();
+      *f = sigma*GaussRand();
+  }
 
+  if (initialize_layer3) {
     sigma = 1/sqrt(p+1);
-    sigma = 0.0; //special initialization for fullyConnected
     for(i=0, f=parametervector+layer1N+layer2N; i<layer3N; ++i,++f)
-      *f = sigma*gaussrand();
+      *f = sigma*GaussRand();
   }
-  else
-  {
-    for(i=0, f=parametervector; i<N; ++i,++f)
-      *f = 0.0;
-  }
-  cparametervector = parametervector; // const pointer to same data
 }
 
 // Initialize from a previous set of values

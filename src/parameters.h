@@ -7,7 +7,7 @@
   Courtesy http://c-faq.com/lib/gaussian.html
   I've chosen an implementation that is not the fastest, but is more accurate
 */
-double gaussrand();
+double GaussRand();
 
 typedef struct sparameters{
   floatnumber * parametervector;
@@ -15,10 +15,11 @@ typedef struct sparameters{
   int p,d,k,layer1N,layer2N,layer3N,N;
 
   // p,d,k are self explanatory
-  // initializevector = 1 means vector will be initialized randomly
-  //                      with appropriate gaussian
-  // initializevector = 0 meanse vector will set to all zero
-  sparameters(int pp, int dd, int kk, bool initializevector = false);
+  // initialize_layer: whether to initialize weights from a
+  // Gaussian distribution. If not, they are initialized with 0.0
+  sparameters(
+      int p_, int d_, int k_,
+      bool initialize_layer1, bool initialize_layer2, bool initialize_layer3);
 
   // Initialize from a previous set of values
   sparameters(int pp, int dd, int kk, const floatnumber *w);

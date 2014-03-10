@@ -1,7 +1,6 @@
 #ifndef SLN_MLL_H
 #define SLN_MLL_H
 
-#include "compatibility.h"
 #include "types.h"
 
 class io;
@@ -11,6 +10,33 @@ struct sparameters;
 typedef sparameters parameters;
 struct error_t_struct;
 typedef error_t_struct error_t;
+class SLN_MLL;
+
+namespace LbfgsSLNMLL {
+
+  SLN_MLL * model;
+
+  // Calculate loss on the training dataset with given weights.
+  lbfgsfloatval_t evaluate(
+      void *instance,
+      const lbfgsfloatval_t *wv,
+      lbfgsfloatval_t *g,
+      const int n,
+      const lbfgsfloatval_t step);
+
+  // Print progress made so far.
+  int progress(
+      void *instance,
+      const lbfgsfloatval_t *x,
+      const lbfgsfloatval_t *g,
+      const lbfgsfloatval_t fx,
+      const lbfgsfloatval_t xnorm,
+      const lbfgsfloatval_t gnorm,
+      const lbfgsfloatval_t step,
+      int n,
+      int k,
+      int ls);
+};
 
 // A neural network with 1 hidden layer, and direct connections between input
 // and output layer, in addition to connections between input and hidden layer,
@@ -32,7 +58,7 @@ class SLN_MLL {
   // input labels (ytrain) with k tags. The neural network has d hidden units.
   // This function does NOT train the regularization strength, and 
   // instead expects it to be set in the member variable "C"
-  void train();
+  void Train();
 
   // similar to train(), but this method additionally calculates an optimal
   // value for C2. "C" is expected to be set correctly prior to call.
@@ -42,23 +68,23 @@ class SLN_MLL {
   // in steps of stepSize. Train time is expected to be ~ 250 times the time
   // taken for train() if the number of folds is 10, and C2 is searched in the
   // range {2^-12, 2^-11, ..., 2^12}.
-  void train(cv_params params_for_C2);
+  void Train(cv_params params_for_C2);
 
   // Similar to train(cv_params params_for_C), but this method trains
   // both C and C2. Train time is expected to be 
   // ~ 500 times the time taken for train() if the number of folds is 10;
   // and C and C2 are searched in the range {2^-12, 2^-11, ..., 2^12}
-  void train(cv_params params_for_C, cv_params params_for_C2);
+  void Train(cv_params params_for_C, cv_params params_for_C2);
 
   // Given a test set (xtest), compare our predictions with the ground truth
   // (ytest) and return the calculated evaluation metric values.
-  error_t test(data_t xtest, data_t ytest);
+  error_t Test(data_t xtest, data_t ytest);
 
   ~SLN_MLL();  // Since we don't do inheritance, it is not virtual (yet).
 
-  floatnumber getC()          { return C; }
-  floatnumber getC2()         { return C2;}
-  floatnumber getParameters() { return wopt;}
+  floatnumber GetC()          { return C; }
+  floatnumber GetC2()         { return C2;}
+  parameters* GetParameters() { return wopt;}
 
 
  protected:
@@ -68,20 +94,20 @@ class SLN_MLL {
   //   y_hat:   output (label estimates).
   //   ha:      activation vector for the hidden layer.
   //   h:       values computed at the hidden layer.
-  void forwardPropagate(
+  void ForwardPropagate(
     record_t const & x, parameters const & w,
     floatnumber *y_hata_, floatnumber *y_hat_,
     floatnumber *ha_, floatnumber *h_);
 
   // Compare predictions (y_hat) with ground truth (y) and determine loss values
   // negative log likelihood (nll) and hamming loss (hl).
-  void calculateLosses(
+  void CalculateLosses(
     const floatnumber *y_hata, const floatnumber *y_hat, record_t const & y,
     parameters const & w, floatnumber & nll, floatnumber & hl);
 
   // Calculate the jacobian of the parameters of the neural network model.
   // Used by LBFGS for optimization.
-  void calculateJacobian(
+  void CalculateJacobian(
     record_t const & x, record_t const & y,
     const floatnumber *y_hata, const floatnumber *y_hat,
     const floatnumber *ha, const floatnumber *h,
@@ -107,6 +133,6 @@ class SLN_MLL {
   floatnumber C2;                  // Regularization, lower => stronger regularization
   floatnumber linearity = 0.0;     // 1.0e-5;  // To speed up convergence
   int counter=0;                   // Keeps a count of LBFGS iterations done
-}
+};
 
 #endif

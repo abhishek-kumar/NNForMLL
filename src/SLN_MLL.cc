@@ -1,6 +1,13 @@
+/*
+ * SLN_MLL.cc
+ *
+ *  Created on: Mar 8, 2014
+ *      Author: abhishekkr
+ */
+
 #include <math.h>
 
-#include "BN_MLL.h"
+#include "SLN_MLL.h"
 #include "cross_validate.h"
 #include "io.h"
 #include "logging.h"
@@ -9,30 +16,30 @@
 using namespace std;
 
 // Constructors
-BN_MLL::BN_MLL(io & fileio, dimensions dim) :
+SLN_MLL::SLN_MLL(io & fileio, dimensions dim) :
     m(fileio.xtr.size()), p(dim.p), d(dim.h), k(dim.k),
     xtr(fileio.xtr), ytr(fileio.ytr),
-    wopt(0), C(0.0), linearity(0.0), counter(0) { }
+    wopt(0), C(0.0), C2(0.0), linearity(0.0), counter(0) { }
 
-BN_MLL::BN_MLL(
+SLN_MLL::SLN_MLL(
   data_t& xtrain, data_t& ytrain, dimensions dim,
-  floatnumber C_) :
+  floatnumber C_, floatnumber C2_) :
     m(xtrain.size()), p(dim.p), d(dim.h), k(dim.k),
     xtr(xtrain), ytr(ytrain),
-   wopt(0), C(C_), linearity(0.0), counter(0)  { }
+   wopt(0), C(C_), C2(C2_), linearity(0.0), counter(0)  { }
 
-void BN_MLL::Train() {
+void SLN_MLL::Train() {
   // Initialize parameters for LBFGS
-  if(wopt) delete wopt;
-  wopt = new parameters(p, d, k, true, true, false);
+  if (wopt) delete wopt;
+  wopt = new parameters(p, d, k, true, true, true);
   floatnumber bestloss = 1e+5;
   lbfgs_parameter_t param; int ret=0; lbfgs_parameter_init(&param);
   param.linesearch = LBFGS_LINESEARCH_BACKTRACKING_WOLFE;
 
   // Run the LBFGS training process
   counter = 0; // count of iterations done so far
-  LbfgsBNMLL::model = this;
-  ret = lbfgs(wopt->N, wopt->getvector(), &bestloss, LbfgsBNMLL::evaluate, LbfgsBNMLL::progress, &xtr, &param);
+  LbfgsSLNMLL::model = this;
+  ret = lbfgs(wopt->N, wopt->getvector(), &bestloss, LbfgsSLNMLL::evaluate, LbfgsSLNMLL::progress, &xtr, &param);
 
   // Report the optimization result.
   Log("    L-BFGS optimization terminated with status code = %d", ret);
@@ -43,14 +50,14 @@ void BN_MLL::Train() {
 // the test subset and return loss values.
 error_t TrainAndTest(io& dataset, dimensions dim, floatnumber C) {
   // Train
-  BN_MLL bn_mll(dataset.xtr, dataset.ytr, dim, C);
-  bn_mll.Train();
+  SLN_MLL sln_mll(dataset.xtr, dataset.ytr, dim, C);
+  sln_mll.Train();
 
   // Test and return loss
-  return bn_mll.Test(dataset.xte, dataset.yte);
+  return sln_mll.Test(dataset.xte, dataset.yte);
 }
 
-void BN_MLL::Train(cv_params cv) {
+void SLN_MLL::Train(cv_params cv) {
   // cross validate to find regularization strength
   this->C = FindBestC(cv, xtr, ytr, dimensions(p, d, k),
       TrainAndTest, false);
@@ -59,7 +66,7 @@ void BN_MLL::Train(cv_params cv) {
   Train();
 }
 
-error_t BN_MLL::Test(data_t xtest, data_t ytest) {
+error_t SLN_MLL::Test(data_t xtest, data_t ytest) {
   int sz = xtest.size();
   floatnumber y_hata[k], y_hat[k], ha[d], h[d], curloss, hl;
   error_t loss = error_t();
@@ -110,7 +117,7 @@ error_t BN_MLL::Test(data_t xtest, data_t ytest) {
   return loss;
 }
 
-inline void BN_MLL::CalculateJacobian(
+inline void SLN_MLL::CalculateJacobian(
     record_t const & x, record_t const & y,
     const floatnumber *y_hata, const floatnumber *y_hat,
     const floatnumber *ha, const floatnumber *h,
@@ -146,14 +153,21 @@ inline void BN_MLL::CalculateJacobian(
       jacobian.val(1,i,j) += dy[j]*h[i];
   for(int j=0; j<k; ++j)
     jacobian.val(1,d,j) += dy[j];
+
+  for(int i=0; i<p; ++i)
+    for(int j=0; j<k; ++j)
+      jacobian.val(2,i,j) += dy[j]*x[i];
+  for(int j=0; j<k; ++j)
+    jacobian.val(2,p,j) += dy[j];
 };
 
-void BN_MLL::ForwardPropagate(  record_t const & x,
-                                parameters const & w,
-                    floatnumber *y_hata_,
-                    floatnumber *y_hat_,
-                    floatnumber *ha_,
-                    floatnumber *h_) {
+void SLN_MLL::ForwardPropagate(
+    record_t const & x,
+    parameters const & w,
+    floatnumber *y_hata_,
+    floatnumber *y_hat_,
+    floatnumber *ha_,
+    floatnumber *h_) {
   // Layer 0
   for(int j=0; j<d; ++j)
     ha_[j] = w.val(0,p,j);
@@ -169,11 +183,19 @@ void BN_MLL::ForwardPropagate(  record_t const & x,
   for(int i=0; i<d; ++i)
     for(int j=0; j<k; ++j)
       y_hata_[j] += h_[i]*w.val(1,i,j);
+
+  // Layer 2
+  for(int j=0; j<k; ++j)
+    y_hata_[j] += w.val(2,p,j);
+  for(int i=0; i<p; ++i)
+    for(int j=0; j<k; ++j)
+      y_hata_[j] += x[i]*w.val(2,i,j);
+
   for(int j=0; j<k; ++j)
     y_hat_[j] = 1.0/(1.0+exp((-1)*y_hata_[j]));
 }
 
-void BN_MLL::CalculateLosses(
+void SLN_MLL::CalculateLosses(
   const floatnumber *y_hata, const floatnumber *y_hat, record_t const & y,
   parameters const & w, floatnumber & nll, floatnumber & hl) {
 
@@ -199,7 +221,7 @@ void BN_MLL::CalculateLosses(
 // type, but this is simple and avoids debugging nightmares.
 
 // Internal function to be used by the LBFGS library.
-lbfgsfloatval_t LbfgsBNMLL::evaluate(
+lbfgsfloatval_t LbfgsSLNMLL::evaluate(
     void *instance,
     const lbfgsfloatval_t *wv,
     lbfgsfloatval_t *g,
@@ -210,7 +232,8 @@ lbfgsfloatval_t LbfgsBNMLL::evaluate(
   int p = model->p, d = model->d, k = model->k, m = model->m;
   data_t& xtr = model->xtr;
   data_t& ytr = model->ytr;
-  floatnumber C = model->C;
+  floatnumber C = model->GetC();
+  floatnumber C2 = model->GetC2();
 
   floatnumber curloss=0.0, loss=0.0, hl=0.0; // NLL and HammingLoss
   floatnumber wrongtags=0,wronglabels=0;
@@ -233,11 +256,15 @@ lbfgsfloatval_t LbfgsBNMLL::evaluate(
   }
 
   // Add regularization
-  floatnumber wnorm = 0;
-  for(int i=0; i<n; ++i)
-  {
+  floatnumber wnorm = 0;  // wnorm for input --> hidden and hidden --> output
+  for (int i=0; i<jacobian.layer1N + jacobian.layer2N; ++i) {
     g[i] = C*jacobian[i] + 2*m*wv[i];
     wnorm += pow(wv[i],2);
+  }
+  // Extra regularization for level 2 parameters
+  for (int i=jacobian.layer1N + jacobian.layer2N; i<n; ++i) {
+    g[i] = C*jacobian[i] + 2*m*C2*wv[i];
+    wnorm += C2*pow(wv[i],2);
   }
   jacobian.destroy();
   loss = C*loss + m*wnorm;
@@ -245,7 +272,7 @@ lbfgsfloatval_t LbfgsBNMLL::evaluate(
 }
 
 // Anything on the heap is destroyed here
-BN_MLL::~BN_MLL() {
+SLN_MLL::~SLN_MLL() {
    if (wopt) {
      wopt->destroy();
      delete wopt;
@@ -254,7 +281,7 @@ BN_MLL::~BN_MLL() {
 
 // Internal function to be used by the LBFGS library.
 // The return value of this function outputs the progress made so far at periodic intervals.
-int LbfgsBNMLL::progress(void *instance,
+int LbfgsSLNMLL::progress(void *instance,
             const lbfgsfloatval_t *x,
             const lbfgsfloatval_t *g,
             const lbfgsfloatval_t fx,
@@ -268,8 +295,8 @@ int LbfgsBNMLL::progress(void *instance,
   ++counter;
   if(counter % 1000 != 0)
     return 0;
-    Log("    Iteration %d | "
-        "loss: %f; w-norm = %f, jacobian-norm = %f, step = %f", \
-        counter, fx, xnorm, gnorm, step);
-    return 0;
+  Log("    Iteration %d | "
+      "loss: %f; w-norm = %f, jacobian-norm = %f, step = %f", \
+      counter, fx, xnorm, gnorm, step);
+  return 0;
 }

@@ -58,10 +58,10 @@ error_t BR_MLL::Test(data_t xtest, data_t ytest) {
     for(int j=0; j<k; ++j) {
       floatnumber y_hata_tag, y_hat_tag;
       BN_MLL& tagModel = *(baseModels[j]);
-      parameters& weights = *(tagModel.getParameters());
+      parameters& weights = *(tagModel.GetParameters());
       floatnumber temp = 0.0, junk[d], junk2[d];
-      tagModel.forwardPropagate(xrecord, weights, &y_hata_tag, &y_hat_tag, junk, junk2);
-      tagModel.calculateLosses(&y_hata_tag, &y_hat_tag, ytest_pertag[j][i], weights, curloss, temp);
+      tagModel.ForwardPropagate(xrecord, weights, &y_hata_tag, &y_hat_tag, junk, junk2);
+      tagModel.CalculateLosses(&y_hata_tag, &y_hat_tag, ytest_pertag[j][i], weights, curloss, temp);
       y_hat[j]  = y_hat_tag;
       loss.nll += curloss;
       wrongtags += temp;
