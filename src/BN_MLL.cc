@@ -6,10 +6,10 @@
 #include "logging.h"
 #include "parameters.h"
 
-using namespace std;
+using std::vector;
 
 // Constructors
-BN_MLL::BN_MLL(io & fileio, dimensions dim) :
+BN_MLL::BN_MLL(io& fileio, dimensions dim) :
     m(fileio.xtr.size()), p(dim.p), d(dim.h), k(dim.k),
     xtr(fileio.xtr), ytr(fileio.ytr),
     wopt(0), C(0.0), linearity(0.0), counter(0) { }
@@ -23,7 +23,7 @@ BN_MLL::BN_MLL(
 
 void BN_MLL::Train() {
   // Initialize parameters for LBFGS
-  if(wopt) delete wopt;
+  if (wopt) delete wopt;
   wopt = new parameters(p, d, k, true, true, false);
   floatnumber bestloss = 1e+5;
   lbfgs_parameter_t param; int ret=0; lbfgs_parameter_init(&param);
@@ -68,7 +68,7 @@ error_t BN_MLL::Test(data_t xtest, data_t ytest) {
   for(int i = 0; i < sz; ++i) {
     xrecord = xtest[i]; yrecord = ytest[i];
     ForwardPropagate(xrecord, *wopt, y_hata, y_hat, ha, h);
-    CalculateLosses(y_hata, y_hat, yrecord, *wopt, curloss, hl);
+    CalculateLosses(y_hata, y_hat, yrecord, *wopt, &curloss, &hl);
     loss.nll += curloss; loss.hl += hl; if(hl>0) ++(loss.sl);
 
     // Number of relevant tags (for normalized RL)
@@ -114,20 +114,18 @@ inline void BN_MLL::CalculateJacobian(
     record_t const & x, record_t const & y,
     const floatnumber *y_hata, const floatnumber *y_hat,
     const floatnumber *ha, const floatnumber *h,
-    parameters const & w, parameters & jacobian) {
+    parameters const & w, parameters* jacobian) {
 
   // Calculate deltaLoss / deltaActivation for both levels
   floatnumber dy[k], dh[d];
-  for(int j=0; j<k; ++j)
-  {
+  for (int j=0; j<k; ++j) {
     floatnumber yi = 2*y[j] - 1; // convert to {-1,+1}
     floatnumber minusyi = -yi;
     dy[j] = minusyi*exp(minusyi*y_hata[j]) / (1.0+exp(minusyi*y_hata[j]));
     dy[j] -= linearity*yi;
   }
 
-  for(int j=0; j<d; ++j)
-  {
+  for (int j=0; j<d; ++j) {
     floatnumber delta=0.0;
     for(int kk=0; kk<k; ++kk)
       delta += dy[kk]*w.val(1,j,kk);
@@ -135,17 +133,17 @@ inline void BN_MLL::CalculateJacobian(
   }
 
   // Calculate gradients (w/o regularization)
-  for(int i=0; i<p; ++i)
-    for(int j=0; j<d; ++j)
-      jacobian.val(0,i,j) += dh[j]*x[i];
-  for(int j=0; j<d; ++j)
-    jacobian.val(0,p,j) += dh[j];
+  for (int i=0; i<p; ++i)
+    for (int j=0; j<d; ++j)
+      jacobian->val(0,i,j) += dh[j]*x[i];
+  for (int j=0; j<d; ++j)
+    jacobian->val(0,p,j) += dh[j];
 
-  for(int i=0; i<d; ++i)
-    for(int j=0;j<k; ++j)
-      jacobian.val(1,i,j) += dy[j]*h[i];
-  for(int j=0; j<k; ++j)
-    jacobian.val(1,d,j) += dy[j];
+  for (int i=0; i<d; ++i)
+    for (int j=0;j<k; ++j)
+      jacobian->val(1,i,j) += dy[j]*h[i];
+  for (int j=0; j<k; ++j)
+    jacobian->val(1,d,j) += dy[j];
 };
 
 void BN_MLL::ForwardPropagate(  record_t const & x,
@@ -175,18 +173,20 @@ void BN_MLL::ForwardPropagate(  record_t const & x,
 
 void BN_MLL::CalculateLosses(
   const floatnumber *y_hata, const floatnumber *y_hat, record_t const & y,
-  parameters const & w, floatnumber & nll, floatnumber & hl) {
+  parameters const & w, floatnumber* nll, floatnumber* hl) {
 
   // All losses without regularization
-  nll = 0; hl = 0;
+  floatnumber calculated_nll = 0, calculated_hl = 0;
 
-  for(int i=0; i<k; ++i) {
+  for (int i=0; i<k; ++i) {
     floatnumber yi = 2*y[i] - 1;  // convert to {-1,+1}
     floatnumber minusyi = (-1)*yi;
-    nll += log(1.0+exp(minusyi*y_hata[i])) - linearity*yi*y_hata[i];
+    calculated_nll += log(1.0+exp(minusyi*y_hata[i])) - linearity*yi*y_hata[i];
     if(  (y_hat[i]<0.5 && y[i]>=0.5) || (y_hat[i]>=0.5 && y[i]<0.5) )
-      ++hl;
+      ++calculated_hl;
   }
+  *nll = calculated_nll;
+  *hl = calculated_hl;
 }
 
 // This section is created because lbfgs needs function pointers
@@ -210,23 +210,19 @@ lbfgsfloatval_t LbfgsBNMLL::evaluate(
   int p = model->p, d = model->d, k = model->k, m = model->m;
   data_t& xtr = model->xtr;
   data_t& ytr = model->ytr;
-  floatnumber C = model->C;
+  floatnumber C = model->C;  // regularization weight
 
   floatnumber curloss=0.0, loss=0.0, hl=0.0; // NLL and HammingLoss
-  floatnumber wrongtags=0,wronglabels=0;
-  const parameters w = parameters(p, d, k, wv); //w.init(p,d,k,wv);
+  floatnumber wrongtags=0, wronglabels=0;
+  const parameters w = parameters(p, d, k, wv);
   parameters jacobian(p, d, k, false, false, false);
-
 
   for(int i = 0; i < m; ++i) {
     record_t x = xtr[i]; record_t y = ytr[i];
-
     floatnumber y_hata[k], y_hat[k], ha[d], h[d];
-    model->ForwardPropagate(x,w,y_hata, y_hat,ha,h);
-
-    model->CalculateJacobian(x,y,y_hata,y_hat,ha,h,w,jacobian);
-    model->CalculateLosses(y_hata,y_hat,y,w, curloss, hl);
-
+    model->ForwardPropagate(x, w, y_hata, y_hat, ha, h);
+    model->CalculateJacobian(x, y, y_hata, y_hat, ha, h, w, &jacobian);
+    model->CalculateLosses(y_hata, y_hat, y, w, &curloss, &hl);
     loss += curloss;
     wrongtags += hl;
     if(hl>0) ++wronglabels;
@@ -234,8 +230,7 @@ lbfgsfloatval_t LbfgsBNMLL::evaluate(
 
   // Add regularization
   floatnumber wnorm = 0;
-  for(int i=0; i<n; ++i)
-  {
+  for (int i=0; i<n; ++i) {
     g[i] = C*jacobian[i] + 2*m*wv[i];
     wnorm += pow(wv[i],2);
   }

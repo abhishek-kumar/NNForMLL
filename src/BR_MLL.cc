@@ -61,7 +61,7 @@ error_t BR_MLL::Test(data_t xtest, data_t ytest) {
       parameters& weights = *(tagModel.GetParameters());
       floatnumber temp = 0.0, junk[d], junk2[d];
       tagModel.ForwardPropagate(xrecord, weights, &y_hata_tag, &y_hat_tag, junk, junk2);
-      tagModel.CalculateLosses(&y_hata_tag, &y_hat_tag, ytest_pertag[j][i], weights, curloss, temp);
+      tagModel.CalculateLosses(&y_hata_tag, &y_hat_tag, ytest_pertag[j][i], weights, &curloss, &temp);
       y_hat[j]  = y_hat_tag;
       loss.nll += curloss;
       wrongtags += temp;
