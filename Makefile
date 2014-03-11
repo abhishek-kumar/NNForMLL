@@ -28,6 +28,7 @@ lib:
 clean:
 	-rm -rf $(BINDIR)
 	-rm -rf $(DEPDIR)
+	-rm -f *.o
 	sudo rm -rf ./lib
 	cd data && $(MAKE) clean
 

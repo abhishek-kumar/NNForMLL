@@ -12,8 +12,7 @@
   Courtesy http://c-faq.com/lib/gaussian.html
   I've chosen an implementation that is not the fastest, but is more accurate
 */
-double GaussRand()
-{
+double GaussRand() {
   static double V1, V2, S;
   static int phase = 0;
   double X;
@@ -149,9 +148,12 @@ void LogTagCorrelations(parameters& p, int n) {
   // Output top n labels for each hidden unit
   Log("Correlations between labels, as seen by hidden units:");
   for(int h=0; h<(p.d+1); ++h) {
-    std::pair<floatnumber,int> weights[p.k];
-    for(int j=0; j<p.k; ++j) weights[j] = std::pair<floatnumber, int>((-1.0)*fabs(p.val(1,h,j)), j);
-    std::sort(weights,weights+p.k,comparator);
+    std::vector<std::pair<floatnumber,int> > weights;
+    for(int j=0; j<p.k; ++j) {
+      std::pair<floatnumber, int> weight_and_index((-1.0)*fabs(p.val(1,h,j)), j);
+      weights.push_back(weight_and_index);
+    }
+    std::sort(weights.begin(), weights.end(), comparator);
     Log("\tTop Labels for hidden node number %d:", h);
     for(int i=0;i<n;++i)
       Log("\t\tLabel #%d with weight: %f", \
@@ -161,9 +163,13 @@ void LogTagCorrelations(parameters& p, int n) {
   // Output top n features for each hidden unit
   Log("Correlations between features, as seen by hidden units:");
   for(int h=0; h<(p.d+1); ++h) {
-    std::pair<floatnumber,int> weights[p.p];
-    for(int j=0; j<p.p; ++j) weights[j] = std::pair<floatnumber, int>((-1.0)*fabs(p.val(0,j,h)), j);
-    std::sort(weights,weights+p.p,comparator);
+
+    std::vector<std::pair<floatnumber,int> > weights;
+    for(int j=0; j<p.p; ++j) {
+      std::pair<floatnumber, int> weight_and_index((-1.0)*fabs(p.val(0,j,h)), j);
+      weights.push_back(weight_and_index);
+    }
+    std::sort(weights.begin(), weights.end(), comparator);
     Log("\tTop Features for hidden node number %d:", h);
     for(int i=0;i<n;++i)
       Log("\t\tFeature #%d with weight: %f", \

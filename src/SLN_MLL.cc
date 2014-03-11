@@ -16,10 +16,10 @@
 using namespace std;
 
 // Constructors
-SLN_MLL::SLN_MLL(io & fileio, dimensions dim) :
+SLN_MLL::SLN_MLL(io & fileio, dimensions dim, floatnumber C_) :
     m(fileio.xtr.size()), p(dim.p), d(dim.h), k(dim.k),
     xtr(fileio.xtr), ytr(fileio.ytr),
-    wopt(0), C(0.0), C2(0.0), linearity(0.0), counter(0) { }
+    wopt(0), C(C_), C2(0.0), linearity(0.0), counter(0) { }
 
 SLN_MLL::SLN_MLL(
   data_t& xtrain, data_t& ytrain, dimensions dim,
@@ -48,9 +48,10 @@ void SLN_MLL::Train() {
 
 // Given a small subset dataset, train on the training subset and test on
 // the test subset and return loss values.
-error_t TrainAndTest(io& dataset, dimensions dim, floatnumber C) {
+error_t TrainAndTest(
+    io& dataset, dimensions dim, floatnumber C, floatnumber C2) {
   // Train
-  SLN_MLL sln_mll(dataset.xtr, dataset.ytr, dim, C);
+  SLN_MLL sln_mll(dataset.xtr, dataset.ytr, dim, C, C2);
   sln_mll.Train();
 
   // Test and return loss
@@ -59,7 +60,7 @@ error_t TrainAndTest(io& dataset, dimensions dim, floatnumber C) {
 
 void SLN_MLL::Train(cv_params cv) {
   // cross validate to find regularization strength
-  this->C = FindBestC(cv, xtr, ytr, dimensions(p, d, k),
+  this->C2 = FindBestC2(cv, xtr, ytr, dimensions(p, d, k), this->C,
       TrainAndTest, false);
 
   // Train with the new C value.
@@ -238,7 +239,7 @@ lbfgsfloatval_t LbfgsSLNMLL::evaluate(
   floatnumber curloss=0.0, loss=0.0, hl=0.0; // NLL and HammingLoss
   floatnumber wrongtags=0,wronglabels=0;
   const parameters w = parameters(p, d, k, wv); //w.init(p,d,k,wv);
-  parameters jacobian(p, d, k, false);
+  parameters jacobian(p, d, k, false, false, false);
 
 
   for(int i = 0; i < m; ++i) {
@@ -300,3 +301,5 @@ int LbfgsSLNMLL::progress(void *instance,
       counter, fx, xnorm, gnorm, step);
   return 0;
 }
+
+SLN_MLL* LbfgsSLNMLL::model;

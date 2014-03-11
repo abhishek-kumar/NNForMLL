@@ -14,7 +14,7 @@ class SLN_MLL;
 
 namespace LbfgsSLNMLL {
 
-  SLN_MLL * model;
+  extern SLN_MLL * model;
 
   // Calculate loss on the training dataset with given weights.
   lbfgsfloatval_t evaluate(
@@ -49,7 +49,7 @@ class SLN_MLL {
   // dim: dimensions of the neural network.
   // C: regularization weight for edges (input to hidden) and (hidden to output)
   // C2: regularization weight for edges (input to output).
-  SLN_MLL(io& fileio, dimensions dim);
+  SLN_MLL(io& fileio, dimensions dim, floatnumber C);
   SLN_MLL(
     data_t& xtrain, data_t& ytrain, dimensions dim,
     floatnumber C, floatnumber C2);
@@ -113,12 +113,12 @@ class SLN_MLL {
     const floatnumber *ha, const floatnumber *h,
     parameters const& w, parameters& jacobian);
 
-  friend lbfgsfloatval_t Compatibility::evaluate(
+  friend lbfgsfloatval_t LbfgsSLNMLL::evaluate(
     void* instance, const lbfgsfloatval_t* wv,
     lbfgsfloatval_t* g, const int n, const lbfgsfloatval_t step);
 
 
-  friend int Compatibility::progress(
+  friend int LbfgsSLNMLL::progress(
     void *instance, const lbfgsfloatval_t *x,
     const lbfgsfloatval_t *g, const lbfgsfloatval_t fx,
     const lbfgsfloatval_t xnorm, const lbfgsfloatval_t gnorm,
@@ -128,11 +128,11 @@ class SLN_MLL {
   int m;                           // Number of training examples
   int p,d,k;                       // Dimensions of the parameters and gradient
   data_t xtr, ytr, xte, yte;       // training and test datasets
-  parameters * wopt = 0;           // Parameters of the model
+  parameters * wopt;               // Parameters of the model
   floatnumber C;                   // Regularization, lower => stronger regularization
   floatnumber C2;                  // Regularization, lower => stronger regularization
-  floatnumber linearity = 0.0;     // 1.0e-5;  // To speed up convergence
-  int counter=0;                   // Keeps a count of LBFGS iterations done
+  floatnumber linearity;           // 1.0e-5;  // To speed up convergence
+  int counter;                     // Keeps a count of LBFGS iterations done
 };
 
 #endif

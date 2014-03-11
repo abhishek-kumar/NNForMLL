@@ -1,5 +1,7 @@
 #include "BN_MLL.h"
 #include "BR_MLL.h"
+#include "SLN_MLL.h"
+
 #include "io.h"
 #include "logging.h"
 #include "parameters.h"
@@ -59,7 +61,7 @@ int main(int argc, char **argv) {
       return 1;
     }
     singleLayerC = atof(argv[7]);
-    SLN_MLL sln_mll(fileio, dimensions(p, d, k));
+    SLN_MLL sln_mll(fileio, dimensions(p, d, k), singleLayerC);
     Log("Training model. Regularization weight C has been provided, "
         "but C2 will be learnt via cross validation. This might take some time"
         "since training will be done ~15 times on the training set.");

@@ -215,7 +215,7 @@ lbfgsfloatval_t LbfgsBNMLL::evaluate(
   floatnumber curloss=0.0, loss=0.0, hl=0.0; // NLL and HammingLoss
   floatnumber wrongtags=0,wronglabels=0;
   const parameters w = parameters(p, d, k, wv); //w.init(p,d,k,wv);
-  parameters jacobian(p, d, k, false);
+  parameters jacobian(p, d, k, false, false, false);
 
 
   for(int i = 0; i < m; ++i) {
@@ -273,3 +273,5 @@ int LbfgsBNMLL::progress(void *instance,
         counter, fx, xnorm, gnorm, step);
     return 0;
 }
+
+BN_MLL* LbfgsBNMLL::model;

@@ -14,7 +14,7 @@ class BN_MLL;
 
 namespace LbfgsBNMLL {
 
-  BN_MLL * model;
+  extern BN_MLL * model;
 
   // Calculate loss on the training dataset with given weights.
   lbfgsfloatval_t evaluate(

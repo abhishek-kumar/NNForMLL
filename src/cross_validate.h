@@ -4,7 +4,10 @@
 #include "io.h"
 #include "types.h"
 
+// Functions that takes a dataset, dimensions of network,
+// regularization parameter and return the computed loss.
 typedef error_t (*callback_fn)(io&, dimensions, floatnumber);
+typedef error_t (*callback_fn2)(io&, dimensions, floatnumber, floatnumber);
 
 // Random number generator
 int rand_int(int n);
@@ -26,4 +29,14 @@ floatnumber FindBestC(
     callback_fn evaluate_fn,
     bool silent_mode);
 
+// Similar to FindBestC above, but this cross validates to find the best C2
+// when C has already been found.
+// Note that C refers to the regularization parameter for weights of
+// edges input --> hidden --> output; whereas C2 refers to the regularization
+// for weights of edges input --> output.
+floatnumber FindBestC2(
+    cv_params cv,
+    data_t& xtrain, data_t& ytrain, dimensions dim, floatnumber C,
+    callback_fn2 evaluate_fn,
+    bool silent_mode);
 #endif
