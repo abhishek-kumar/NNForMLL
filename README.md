@@ -9,18 +9,18 @@ CONTENTS
 6. Contact
 
 
-1. Introduction
---------------------
+
+# 1. Introduction
 
 This is an implementation of single hidden layer neural network (NN) models for multi-label learning.
 
 Multi-label learning is an extension of standard binary classification where the goal is to predict a set of labels for each input example. This project implements three models (i.e. BN-MLL, SLN-MLL and BR-MLL) that learn to predict labels for unseen documents, using a neural network with a hidden layer. These hidden units capture nonlinear latent structure, which improves classification accuracy, and allows correlations between tags to be visualized explicitly.
 
 Compared to previous neural network methods for multi-label learning, this implementatation includes several design decisions that lead to a notable decrease in training time and an increase in accuracy. Empirical results show that the new method outperforms existing methods on benchmark datasets.
-Further details of the models can be found in a draft manuscript [here](http://is.gd/NNForMLL).
+Further details of the models can be found in a draft manuscript [here](https://www.dropbox.com/s/y4phhofpmm4fdv9/NeuralNetsForMLL-ECML13.pdf?dl=0).
 
 
-2. How to Install and Compile
+# 2. How to Install and Compile
 ---------------------
 This implementation uses L-BFGS in concert with backpropagation for training the model parameters.
 To install, checkout this repository and run `make`:
@@ -43,8 +43,7 @@ Notes:
   * The commands in this file have been tested on a PC running Ubuntu. They should work correctly on a mac, on other linux platforms and on windows with Cygwin. Please let me know if something doesn't work right on your platform.
 
 
-3. How to Run
------------------------------------
+# 3. How to Run
 To compile the code, run `make` from the `NNForMLL` directory.
 
      $ make
@@ -56,10 +55,12 @@ To run the `BN-MLL` model on the provided benchmark datasets, simply run the `ru
 In order to run program on your own datasets, with your own parameters, run using the following format:
 
      $ ./bin/mll <method> <train file> <test file> <p> <h> <k> [singleLayerC]
+     $ # Where we have p features, k labels and h hidden nodes.
+     $ # C refers to regularization coefficient.
 
 <dl>
 <dt>method:     </dt>
-<dd>Either 1,2 or 3 for BN-MLL, SLN-MLL and BR-NN respectively (as described in the paper, http://is.gd/NNForMLL).</dd>
+<dd>Either 1,2 or 3 for BN-MLL, SLN-MLL and BR-NN respectively (as described in the [paper](https://www.dropbox.com/s/y4phhofpmm4fdv9/NeuralNetsForMLL-ECML13.pdf?dl=0)).</dd>
 
 <dt>train file: </dt>
 <dd>Enter the full path to the training file. The file should be a csv file with only numbers, such that each line represents a document, the first p columns indicate values for the p features, the next k columns indicate values (0 or 1) for the k labels. More details on the data format here: https://github.com/abhishek-kumar/NNForMLL/tree/master/data. </th></tr>
@@ -80,24 +81,21 @@ In order to run program on your own datasets, with your own parameters, run usin
 <dd>Regularization weight for the bottom edges (edges between input layer and hidden layer). This argument is optional. If not provided, the program will learn using cross validation (this will take ~15x longer to run)</dd>
 </dl>
 
-4. Documentation
-----------------
-The details of the models and optimizations done are provided in this [paper](http://is.gd/NNForMLL).
+# 4. Documentation
+The details of the models and optimizations done are provided in this [paper](https://www.dropbox.com/s/y4phhofpmm4fdv9/NeuralNetsForMLL-ECML13.pdf?dl=0).
 
 
-5. License
-----------
+# 5. License
 This code is available under the [Apache License, version 2.0](http://www.apache.org/licenses/LICENSE-2.0.html).
 Please let me know if you find this work useful and are using it in any of your projects.
 
 
-6. Contact
-----------
+# 6. Contact
 
-Email:
+Email
 
      abhishek.kumar.ak [at] gmail [dot] com
 
-[Website](http://abhishek-kumar.com):
+[Website](http://abhishek-kumar.com)
 
      http://abhishek-kumar.com
